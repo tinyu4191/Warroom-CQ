@@ -7,18 +7,76 @@
 
         <link rel="icon" href="images/QM.ico" type="image/ico" />
         <title>Innolux CQE |</title>
-        <link rel="stylesheet" href="style.css" />
+
+        <!-- Bootstrap -->
+        <link rel="stylesheet" href="./kit/bootstrap-5.0.2-dist/css/bootstrap.min.css" />
+        <!-- Font Awesome -->
+        <link href="./kit/fontawesome-free-5.15.4-web/css/all.css" rel="stylesheet" />
+        <!-- Google font -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bungee&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="reset.css" />
+        <link rel="stylesheet" href="./css/main.css" />
     </head>
     <body>
         <div id="main">
-            <header></header>
-            <nav></nav>
+            <header>
+                <em class="title">品質戰情圖 <span>銷(CQ)</span></em>
+            </header>
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                    <div class="navbar-nav"></div>
+                </div>
+            </nav>
             <div class="container">
-                <div class="row"></div>
-                <div class="row"></div>
+                <div class="row">
+                    <div class="col-md-5">
+                        <div class="block-title"><span style="background-color: #fffacd">客戶排名</span></div>
+                        <div class="block-content">
+                            <div class="table-box">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>客戶</th>
+                                            <th colspan="2">Past</th>
+                                            <th colspan="2">Current</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="rank-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="block-title"><span style="background-color: #e0ffff">年度CQE指標</span></div>
+                        <div class="block-content"></div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12"></div>
+                </div>
             </div>
         </div>
 
-        <script src="main.css"></script>
+        <!-- jQuery -->
+        <script src="http://tnvqis03/Dashboard_Template/vendors/jquery/dist/jquery.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/build/js/jquery.url.js"></script>
+        <!-- Bootstrap -->
+        <script src="./kit/bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Font Awesome -->
+        <script src="./kit/fontawesome-free-5.15.4-web/js/all.min.js"></script>
+        <!-- ECharts -->
+        <script src="./kit/echarts-5.1.1/dist/echarts.min.js"></script>
+        <script src="./kit/echarts-gl-master/dist/echarts-gl.min.js"></script>
+        <!-- axios -->
+        <script src="./kit/axios-master/dist/axios.min.js"></script>
+        <!-- QS -->
+        <script src="./kit/qs-master/dist/qs.js"></script>
+        <script src="main.js"></script>
     </body>
 </html>
