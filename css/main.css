@@ -1,8 +1,9 @@
 :root {
-  font-family: "Times New Roman", Times, serif;
+  font-family: Microsoft JhengHei;
   font-size: 12px;
 }
 
+html,
 body {
   background-color: #2a3f54;
 }
@@ -59,8 +60,7 @@ header {
 }
 .container .row {
   margin-top: 10px;
-  background-color: steelblue;
-  height: 300px;
+  max-height: 360px;
 }
 .container .row div[class^=col] {
   display: -webkit-box;
@@ -95,35 +95,238 @@ header {
   text-align: center;
 }
 .container .row .block-content {
-  height: calc(300px - 75px);
+  height: calc(360px - 75px);
   background-color: white;
   border-radius: 0 0 15px 15px;
   padding: 10px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: stretch;
+      -ms-flex-align: stretch;
+          align-items: stretch;
+}
+.container .row .block-content .rate-box {
+  width: 140px;
+  padding: 5px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-flow: column nowrap;
+          flex-flow: column nowrap;
+}
+.container .row .block-content .rate-box div {
+  border: 2px solid #fecb37;
+  border-radius: 10px;
+}
+.container .row .block-content .rate-box div + div {
+  margin-top: 5px;
+}
+.container .row .block-content .rate-box .rate-title {
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 50px;
+          flex: 0 0 50px;
+  background-color: #fac090;
+  font-size: 32px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+.container .row .block-content .rate-box .rate-value {
+  -webkit-box-flex: 3;
+      -ms-flex: 3 0 0px;
+          flex: 3 0 0;
+  background-color: #fbe8d9;
+  font-size: 40px;
+  font-weight: bolder;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
 }
 .container .row .block-content .table-box {
+  -webkit-box-flex: 3;
+      -ms-flex: 3 0 0px;
+          flex: 3 0 0;
+  height: 100%;
   max-height: 100%;
   overflow-y: auto;
 }
+.container .row .block-content .content {
+  -webkit-box-flex: 1;
+      -ms-flex: 1 0 0px;
+          flex: 1 0 0;
+  font-size: 28px;
+  font-weight: bolder;
+  text-align: center;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-flow: column nowrap;
+          flex-flow: column nowrap;
+}
+.container .row .block-content .content .chart-title {
+  -webkit-box-flex: 1;
+      -ms-flex: 1 0 0px;
+          flex: 1 0 0;
+}
+.container .row .block-content .content .chart-value {
+  -webkit-box-flex: 1;
+      -ms-flex: 1 0 0px;
+          flex: 1 0 0;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+.container .row .block-content .content .chart-value div {
+  -webkit-box-flex: 1;
+      -ms-flex: 1 0 0px;
+          flex: 1 0 0;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-flow: column nowrap;
+          flex-flow: column nowrap;
+}
+.container .row .block-content .content .chart-value div div:first-child {
+  font-size: 20px;
+}
+.container .row .block-content .content .chart-value div div + div {
+  margin-top: 10px;
+}
+.container .row .block-content .content .chart-main {
+  -webkit-box-flex: 3;
+      -ms-flex: 3 0 0px;
+          flex: 3 0 0;
+}
+.container .row .block-content .content + .content {
+  margin-left: 5px;
+}
 
-table,
-td,
-th {
+.table-box table,
+.table-box td,
+.table-box th {
   font-size: 16px;
   font-weight: bolder;
-  padding: 5px;
+  padding: 10px;
 }
-
-table {
+.table-box table {
   width: 100%;
 }
-
-th {
-  font-size: 24px;
-  text-align: center;
-}
-
-table thead {
+.table-box table thead {
   position: sticky;
   top: 0;
   background-color: white;
+  text-align: center;
+}
+.table-box table thead th {
+  font-size: 24px;
+}
+.table-box table tbody {
+  text-align: center;
+}
+.table-box table tbody .new-case {
+  color: red;
+  font-weight: bolder;
+  -webkit-animation: fade 600ms infinite;
+          animation: fade 600ms infinite;
+}
+.table-box table tbody .old-case {
+  visibility: hidden;
+}
+.table-box table tbody td div {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+.table-box table tbody td div span {
+  -webkit-box-flex: 1;
+      -ms-flex: 1 0 0px;
+          flex: 1 0 0;
+  text-align: end;
+  padding-right: 10px;
+}
+.table-box table tbody td img {
+  width: 100%;
+  max-height: 20px;
+}
+.table-box table tbody tr td:first-child {
+  width: 30%;
+}
+.block-trend table {
+  width: 100%;
+  font-size: 18px;
+  font-weight: bolder;
+}
+.block-trend thead {
+  text-decoration: underline;
+  text-align: center;
+  outline: 3px solid lime;
+}
+.block-trend thead th {
+  height: 50px;
+  outline: 3px solid purple;
+  vertical-align: middle;
+}
+
+.circle {
+  height: 29px;
+  width: 29px;
+  border-radius: 50%;
+}
+.circle.green {
+  background-color: #28a745;
+}
+.circle.yellow {
+  background-color: #ffc107;
+}
+.circle.red {
+  background-color: #dc3545;
+}
+
+@-webkit-keyframes fade {
+  from {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
 }/*# sourceMappingURL=main.css.map */

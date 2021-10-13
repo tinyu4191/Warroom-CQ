@@ -4,8 +4,8 @@ let qs = Qs
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded'
 
 // dom
-const navBar = document.querySelector('.navbar-nav')
-
+const navBar = document.querySelector('.navbar-nav'),
+    rateValue = document.querySelector('.rate-value')
 // Value Default
 let buSelected = 'TV'
 // Object
@@ -63,7 +63,7 @@ navBar.addEventListener('click', (params) => {
     navClick(buSelected)
 })
 
-const navClick = (bu) => {
+const getCustomerRankingData = (bu) => {
     axios.post(hostName + 'warroom_customer_ranking.php', qs.stringify({ Bu: bu })).then((res) => {
         let data = res.data
         const tbody = document.querySelector('.rank-tbody')
@@ -72,13 +72,13 @@ const navClick = (bu) => {
             let lamp = ''
             switch (true) {
                 case greenLamp.includes(value):
-                    lamp = 'G'
+                    lamp = 'green'
                     break
                 case yellowLamp.includes(value):
-                    lamp = 'Y'
+                    lamp = 'yellow'
                     break
                 case redLamp.includes(value):
-                    lamp = 'R'
+                    lamp = 'red'
                     break
 
                 default:
@@ -86,22 +86,149 @@ const navClick = (bu) => {
             }
             return lamp
         }
+        const regex = new RegExp('^[a-zA-Z]+$')
         data.forEach((item) => {
             item.PastLamp = switchLamp(item.Past)
             item.CurrentLamp = switchLamp(item.Current)
+            const pastDiv = `<div><span>${regex.test(item.Past) ? '' : item.Past}</span><div class="circle ${
+                item.PastLamp
+            }"></div></div>`
+            const currentDiv = `<div><span>${regex.test(item.Current) ? '' : item.Current}</span><div class="circle ${
+                item.CurrentLamp
+            }"></div></div>`
             tbody.innerHTML += `
         <tr>
-           <td>${item.CustomerName}</td>
-           <td>${item.Past}</td>
-           <td>${item.PastLamp}</td>
-           <td>${item.Current}</td>
-           <td>${item.CurrentLamp}</td>
-           <td>${item.UpdateData}</td>
+           <td><img src="./images/${item.CustomerName}.png"/></td>
+           <td colspan="2">${pastDiv}</td>
+           <td colspan="2">${currentDiv}</td>
+           <td class="${item.UpdateData === 'New' ? 'new-case' : 'old-case'}">${item.UpdateData}</td>
         </tr>
         `
         })
-        console.table(data)
+        rateValue.innerHTML = calculateRate(data)
     })
+}
+
+const getAnuualKpiData = (bu) => {
+    axios.post(hostName + 'warroom_annual_metrics.php', qs.stringify({ Bu: bu })).then((res) => {
+        const data = res.data[0]
+        console.log(data)
+        // dom
+        const valueObaAnnualActual = document.querySelector('.value-oba-annual-actual'),
+            valueObaAnnualTarget = document.querySelector('.value-oba-annual-target'),
+            valueCaerbOpenClose = document.querySelector('.value-caerb-open-close'),
+            valueCaerbTarget = document.querySelector('.value-caerb-target'),
+            chartOba = document.querySelector('.chart-oba'),
+            chartcaerb = document.querySelector('.chart-caerb')
+
+        valueObaAnnualActual.innerHTML = `${Math.floor((data.OBA_Annual_Cost / 1000000) * 100) / 100} M`
+        valueObaAnnualTarget.innerHTML = `${Math.floor((data.OBA_Annual_Target / 1000000) * 100) / 100} M`
+        valueCaerbOpenClose.innerHTML = `${data.CAERB_Open}/${data.CAERB_close}`
+        valueCaerbTarget.innerHTML = `${data.CAERB_target}`
+        if (Number(data.OBA_Annual_Cost) >= Number(data.OBA_Annual_Target)) valueObaAnnualActual.style.color = 'red'
+        else valueObaAnnualActual.style.color = 'blue'
+        if (Number(data.CAERB_Open) + Number(data.CAERB_close) >= Number(data.CAERB_target))
+            valueCaerbOpenClose.style.color = 'red'
+        else valueCaerbOpenClose.style.color = 'blue'
+
+        // echarts OBA Cost
+        const objOba = {}
+        data.OBA_Cost_LastYear =
+            data.OBA_Annual_Target > data.OBA_Cost_LastYear ? data.OBA_Annual_Target : data.OBA_Cost_LastYear
+        const maxAnnual = (Number(data.OBA_Cost_LastYear) / 80) * 100
+        objOba.value = Math.floor((Number(data.OBA_Annual_Cost) / maxAnnual) * 100)
+        objOba.name = Math.floor((Number(data.OBA_Annual_Cost) / Number(data.OBA_Annual_Target)) * 10000) / 100
+        objOba.axis = Math.floor((Number(data.OBA_Annual_Target) / maxAnnual) * 10) / 10
+        // echarts CAERB
+        const objCaerb = {}
+        const maxCaerb = (Number(data.CAERB_LastYear) / 80) * 100
+        objCaerb.value = Math.floor((Number(data.CAERB_total) / maxCaerb) * 100)
+        objCaerb.name = Math.floor((Number(data.CAERB_total) / Number(data.CAERB_target)) * 10000) / 100
+        objCaerb.axis = Math.floor((Number(data.CAERB_target) / maxCaerb) * 10) / 10
+
+        console.log('OBA:', objOba)
+        console.log('CAERB:', objCaerb)
+        paintChartsGauge(chartOba, objOba)
+        paintChartsGauge(chartcaerb, objCaerb)
+    })
+}
+
+const navClick = (bu) => {
+    getCustomerRankingData(bu)
+    getAnuualKpiData(bu)
+}
+function calculateRate(data) {
+    const totalValue = data.length
+    const overTargetValue = data.filter((e) => e.CurrentLamp === 'green').length
+
+    return `${((overTargetValue / totalValue) * 100).toFixed(0)}%`
+}
+
+// echarts
+const paintChartsGauge = (dom, data) => {
+    let myChart = echarts.init(dom)
+    let option
+    option = {
+        series: [
+            {
+                type: 'gauge',
+                detail: { show: false },
+                data: [
+                    {
+                        value: data.value,
+                        name: data.name,
+                    },
+                ],
+                axisLabel: {
+                    show: false,
+                },
+                detail: {
+                    formatter: `${data.name} %`,
+                    fontSize: 20,
+                    fontWeight: 400,
+                    color: 'black',
+                    offsetCenter: [0, '-35%'],
+                },
+                pointer: {
+                    itemStyle: {
+                        color: 'auto',
+                    },
+                    offsetCenter: [0, -10],
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: [
+                            [data.axis, '#00AE75'],
+                            [0.8, '#FFEC4C'],
+                            [1, '#E54733'],
+                        ],
+                        width: 50,
+                    },
+                },
+                axisTick: {
+                    distance: -50,
+                    length: 10,
+                    lineStyle: {
+                        color: 'white',
+                    },
+                },
+                splitLine: {
+                    distance: -50,
+                    length: 30,
+                    lineStyle: {
+                        color: 'white',
+                        width: 2,
+                    },
+                },
+                center: ['50%', '98%'],
+                radius: '190%',
+                startAngle: 180,
+                endAngle: 0,
+            },
+        ],
+    }
+
+    myChart.setOption(option)
 }
 
 // Render
@@ -110,6 +237,7 @@ const renderNavBar = (data) => {
         if (item === buSelected) {
             navBar.innerHTML += `<a class="nav-item nav-link active" href="#">${item}</a>`
             navClick(buSelected)
+            getAnuualKpiData(buSelected)
         } else navBar.innerHTML += `<a class="nav-item nav-link" href="#">${item}</a>`
     })
 }
