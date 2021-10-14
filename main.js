@@ -52,17 +52,6 @@ const redLamp = [
     '9/9',
 ]
 
-// Event
-navBar.addEventListener('click', (params) => {
-    let target = params.target
-    Array.from(navBar.children).forEach((el) => {
-        el.classList.remove('active')
-    })
-    target.classList.add('active')
-    buSelected = target.innerText
-    navClick(buSelected)
-})
-
 const getCustomerRankingData = (bu) => {
     axios.post(hostName + 'warroom_customer_ranking.php', qs.stringify({ Bu: bu })).then((res) => {
         let data = res.data
@@ -112,7 +101,6 @@ const getCustomerRankingData = (bu) => {
 const getAnuualKpiData = (bu) => {
     axios.post(hostName + 'warroom_annual_metrics.php', qs.stringify({ Bu: bu })).then((res) => {
         const data = res.data[0]
-        console.log(data)
         // dom
         const valueObaAnnualActual = document.querySelector('.value-oba-annual-actual'),
             valueObaAnnualTarget = document.querySelector('.value-oba-annual-target'),
@@ -133,6 +121,14 @@ const getAnuualKpiData = (bu) => {
 
         // echarts OBA Cost
         const objOba = {}
+        console.log(
+            'Target:',
+            data.OBA_Cost_Target,
+            'Last year:',
+            data.OBA_Cost_LastYear,
+            'Target > Last year',
+            data.OBA_Annual_Target > data.OBA_Cost_LastYear
+        )
         data.OBA_Cost_LastYear =
             data.OBA_Annual_Target > data.OBA_Cost_LastYear ? data.OBA_Annual_Target : data.OBA_Cost_LastYear
         const maxAnnual = (Number(data.OBA_Cost_LastYear) / 80) * 100
@@ -146,16 +142,193 @@ const getAnuualKpiData = (bu) => {
         objCaerb.name = Math.floor((Number(data.CAERB_total) / Number(data.CAERB_target)) * 10000) / 100
         objCaerb.axis = Math.floor((Number(data.CAERB_target) / maxCaerb) * 10) / 10
 
-        console.log('OBA:', objOba)
-        console.log('CAERB:', objCaerb)
         paintChartsGauge(chartOba, objOba)
         paintChartsGauge(chartcaerb, objCaerb)
+    })
+}
+
+const getKpiData = (bu) => {
+    async function allData() {
+        const kpi = await axios.post(hostName + 'warroom_annual_metrics.php', qs.stringify({ Bu: bu }))
+        const kpiTrend = await axios.post(hostName + 'warroom_kpi_trend.php', qs.stringify({ Bu: bu }))
+        const kpiShare = await axios.post(hostName + 'warroom_kpi_share.php', qs.stringify({ Bu: bu }))
+
+        return {
+            kpi,
+            kpiTrend,
+            kpiShare,
+        }
+    }
+    allData().then((res) => {
+        const { kpi, kpiTrend, kpiShare } = res
+        const titleIndex = ['OBA Sorting Rate', '當月預估 OBA Sorting Cost', 'Customer Claim']
+        const tdData = (type, color) => {
+            let tdContent = ''
+            let data = kpi.data[0]
+            if (type.includes('Rate')) {
+                tdContent = `
+              <td style="background-color:${color};">${Math.floor(Number(data.OBA_Rate) * 10000) / 100}%/月</td>
+              <td style="background-color:${color};">${Math.floor(Number(data.OBA_Rate_Target) * 10000) / 100}%/月</td>
+              <td style="background-color:${color};"><img src="./images/${data.Rate_Performance}${
+                    data.Rate_Improve
+                }.png"/></td>
+              `
+            } else if (type.includes('Cost')) {
+                tdContent = `
+              <td style="background-color:${color};">${
+                    Math.floor((Number(data.OBA_Estimate) / 1000000) * 100) / 100
+                }M/月</td>
+              <td style="background-color:${color};">${
+                    Math.floor((Number(data.OBA_Cost_Target) / 1000000) * 100) / 100
+                }M/月</td>
+              <td style="background-color:${color};"><img src="./images/${data.OBA_Cost_M_Performance}${
+                    data.OBA_Cost_M_Improve
+                }.png"/></td>
+              `
+            } else if (type.includes('Claim')) {
+                tdContent = `
+              <td style="background-color:${color};">${
+                    Math.floor((Number(data.Customer_Claim) / 1000000) * 100) / 100
+                }M/月</td>
+              <td style="background-color:${color};">${
+                    Math.floor((Number(data.Customer_Claim_Target) / 1000000) * 100) / 100
+                }M/月</td>
+              <td style="background-color:${color};"><img src="./images/${data.Customer_Claim_Performance}${
+                    data.Customer_Claim_Improve
+                }.png"/></td>
+              `
+            }
+            return tdContent
+        }
+
+        const tdChart = (type, index) => {
+            let data = kpiTrend.data
+            let l = data.length
+            const chartDom = document.querySelector(`.chart-line-${index}`)
+            data = data.slice(l - 6)
+            const obj = {}
+            obj.xAxis = data.map((e) => e.Month)
+
+            let obaRateMax = 0
+            let obaCostMax = 0
+            let customerClaimMax = 0
+
+            obj.name = type
+
+            if (type.includes('Rate')) {
+                obj.value = data.map((e) => Math.floor(e.OBA_Rate * 10000) / 100)
+                obj.target = Math.floor(data[5].OBA_Rate_Target * 10000) / 100
+                data.forEach((e) => {
+                    if (obaRateMax < (Math.floor(e.OBA_Rate_Target * 10000) / 100) * 1.5) {
+                        obaRateMax = (Math.floor(e.OBA_Rate_Target * 10000) / 100) * 1.5
+                    }
+                    if (obaRateMax < Math.floor(e.OBA_Rate * 10000) / 100) {
+                        obaRateMax = (Math.floor(e.OBA_Rate * 10000) / 100) * 1.05
+                    }
+                })
+                obj.max = obaRateMax
+                obj.gt = -0.01
+            } else if (type.includes('Cost')) {
+                obj.value = data.map((e, index) => {
+                    if (index === '5') return Math.floor(Number(e.OBA_Estimate) / 10000) / 100
+                    else return Math.floor(Number(e.OBA_Cost) / 10000) / 100
+                })
+                obj.target = Math.floor(Number(data[5].OBA_Cost_Target) / 10000) / 100
+                data.forEach((e) => {
+                    if (obaCostMax < e.OBA_Cost_Target * 1.5) {
+                        obaCostMax = e.OBA_Cost_Target * 1.5
+                    }
+                    if (obaCostMax < e.OBA_Cost) {
+                        obaCostMax = e.OBA_Cost * 1.05
+                    }
+                })
+                obj.max = Math.floor(obaCostMax / 10000) / 100
+                obj.gt = -1
+            } else if (type.includes('Claim')) {
+                obj.value = data.map((e) => Math.floor(Number(e.Customer_Claim) / 10000) / 100)
+                obj.target = Math.floor(Number(data[5].Customer_Claim_Target) / 10000) / 100
+                data.forEach((e) => {
+                    if (customerClaimMax < e.Customer_Claim_Target * 1.5) {
+                        customerClaimMax = e.Customer_Claim_Target * 1.5
+                    }
+                    if (customerClaimMax < e.Customer_Claim) {
+                        customerClaimMax = e.Customer_Claim * 1.05
+                    }
+                })
+                obj.max = Math.floor(customerClaimMax / 10000) / 100
+                obj.gt = -1
+            }
+
+            paintChartLine(chartDom, obj)
+        }
+
+        const lastDiv = (index, color) => {
+            if (index === 0) return `<td class="chart-sankey" rowspan="3" style="background-color:${color}"></td>`
+            else return ''
+        }
+
+        const renderSankey = () => {
+            const chartSankey = document.querySelector('.chart-sankey')
+            let data = kpiShare.data
+            console.log(data)
+            const kpiColor = {
+                'OBA Sorting Rate': '#70E0E0',
+                'OBA Sorting Cost': '#E0FF70',
+                'Customer Claim': '#FFA8E0',
+            }
+            const kpi = Array.from(new Set(data.map((e) => e.KPI)))
+            const customerName = Array.from(new Set(data.map((e) => e.CustomerName)))
+            const colorList = generateColor(customerName.length)
+            const obj = {}
+            obj.value = []
+            kpi.forEach((item) => {
+                obj.value.push({
+                    name: item,
+                    itemStyle: { color: kpiColor[item.trim()] },
+                })
+            })
+            customerName.forEach((item, index) => {
+                obj.value.push({ name: item, itemStyle: { color: colorList[index] } })
+            })
+            obj.links = []
+            data.forEach((item) => {
+                obj.links.push({
+                    source: item.KPI,
+                    target: item.CustomerName,
+                    value: item.Share,
+                    lineStyle: { color: 'gradient' },
+                })
+            })
+
+            paintChartSankey(chartSankey, obj)
+        }
+
+        const trendTbody = document.querySelector('.block-trend tbody')
+        let tbodyContent = ''
+        titleIndex.forEach((item, index) => {
+            let backgrounColor = index % 2 === 0 ? '#C0DEFF' : '#DEFFC0'
+            tbodyContent += `
+          <tr>
+            <td style="background-color:${backgrounColor}">${item.split(' ').join('<br>')}</td>
+            ${tdData(item, backgrounColor)}
+            <td style="background-color:${backgrounColor}"><div class="chart-line-${index + 1}"></div></td>
+            ${lastDiv(index, backgrounColor)}
+          </tr>
+          `
+        })
+
+        trendTbody.innerHTML = tbodyContent
+        titleIndex.forEach((item, index) => {
+            tdChart(item, index + 1)
+        })
+        renderSankey()
     })
 }
 
 const navClick = (bu) => {
     getCustomerRankingData(bu)
     getAnuualKpiData(bu)
+    getKpiData(bu)
 }
 function calculateRate(data) {
     const totalValue = data.length
@@ -221,14 +394,134 @@ const paintChartsGauge = (dom, data) => {
                     },
                 },
                 center: ['50%', '98%'],
-                radius: '190%',
+                radius: '160%',
                 startAngle: 180,
                 endAngle: 0,
             },
         ],
     }
 
+    myChart.clear()
     myChart.setOption(option)
+    setTimeout(function () {
+        window.addEventListener('resize', () => {
+            myChart.resize()
+        })
+    }, 200)
+}
+
+const paintChartLine = (dom, data) => {
+    let myChart = echarts.init(dom)
+    let option
+    option = {
+        // tooltip: {
+        //     trigger: 'axis',
+        // },
+        grid: {
+            right: '1%',
+            bottom: '35%',
+            top: '35%',
+        },
+        xAxis: {
+            data: data.xAxis,
+            axisLabel: {
+                formatter: '{value}月',
+            },
+        },
+        yAxis: {
+            show: false,
+            splitLine: {
+                show: true,
+            },
+        },
+        visualMap: {
+            top: -100,
+            right: -100,
+            pieces: [
+                {
+                    gt: data.gt,
+                    lte: data.target,
+                    color: '#008000',
+                },
+                {
+                    gt: data.target,
+                    lte: data.max,
+                    color: '#e60000',
+                },
+            ],
+        },
+        series: {
+            name: data.name,
+            label: {
+                show: true,
+                formatter: function (e) {
+                    console.log(e.seriesName)
+                    if (e.seriesName.includes('Rate')) return `${e.data}%`
+                    else return `${e.data}M`
+                },
+            },
+            type: 'line',
+            data: data.value,
+            lineStyle: {
+                width: 6,
+            },
+        },
+    }
+
+    myChart.clear()
+    myChart.setOption(option)
+
+    setTimeout(function () {
+        window.addEventListener('resize', () => {
+            myChart.resize()
+        })
+    }, 200)
+}
+
+const paintChartSankey = (dom, data) => {
+    let myChart = echarts.init(dom)
+    let option
+    option = {
+        series: [
+            {
+                type: 'sankey',
+                data: data.value,
+                links: data.links,
+                focusNodeAdjacency: 'allEdges',
+                itemStyle: {
+                    borderWidth: 1,
+                    color: '#1b6199',
+                    borderColor: '#fff',
+                },
+                lineStyle: {
+                    curveness: 0.5,
+                    opacity: 0.5,
+                },
+                layoutIterations: 0,
+            },
+        ],
+    }
+
+    myChart.clear()
+    myChart.setOption(option)
+
+    setTimeout(function () {
+        window.addEventListener('resize', () => {
+            myChart.resize()
+        })
+    }, 200)
+}
+
+// Random Color
+const generateColor = (num) => {
+    let arr = []
+    let hex = () => {
+        return (Math.round(Math.random() * 127) + 127).toString(16)
+    }
+    for (let i = 0; i < num; i++) {
+        arr.push(`#${hex()}${hex()}${hex()}`)
+    }
+    return arr
 }
 
 // Render
@@ -238,7 +531,19 @@ const renderNavBar = (data) => {
             navBar.innerHTML += `<a class="nav-item nav-link active" href="#">${item}</a>`
             navClick(buSelected)
             getAnuualKpiData(buSelected)
+            getKpiData(buSelected)
         } else navBar.innerHTML += `<a class="nav-item nav-link" href="#">${item}</a>`
     })
 }
 renderNavBar(bu)
+
+// Event
+navBar.addEventListener('click', (params) => {
+    let target = params.target
+    Array.from(navBar.children).forEach((el) => {
+        el.classList.remove('active')
+    })
+    target.classList.add('active')
+    buSelected = target.innerText
+    navClick(buSelected)
+})
