@@ -349,13 +349,17 @@ const paintChartsGauge = (dom, data) => {
                 data: [
                     {
                         value: data.value,
-                        name: data.name,
+                        name: data.name + ' %',
+                        title: {
+                            offsetCenter: [0, '-35%'],
+                        },
                     },
                 ],
                 axisLabel: {
                     show: false,
                 },
                 detail: {
+                    show: false,
                     formatter: `${data.name} %`,
                     fontSize: 20,
                     fontWeight: 400,
@@ -363,10 +367,11 @@ const paintChartsGauge = (dom, data) => {
                     offsetCenter: [0, '-35%'],
                 },
                 pointer: {
+                    offsetCenter: [0, -10],
+                    showAbove: false,
                     itemStyle: {
                         color: 'auto',
                     },
-                    offsetCenter: [0, -10],
                 },
                 axisLine: {
                     lineStyle: {
