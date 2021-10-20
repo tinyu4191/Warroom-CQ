@@ -142,7 +142,6 @@ const getAnnualOBACost = (bu) => {
     }).then((res) => {
         if (bu === 'AA') bu = 'BD'
         const data = res.filter((e) => e.APPLICATION.includes(bu))
-        console.log(data)
         let valueCost = checkValue(data.map((e) => e.SORTING_FEE))
         let valueTarget = checkValue(data.map((e) => e.TARGET))
         valueCost = Math.floor(valueCost / 10000) / 100
@@ -167,7 +166,6 @@ const getAnnualCAERB = (bu) => {
     }).then((res) => {
         if (bu === 'AA') bu = 'BD'
         const data = res.filter((e) => e.APPLICATION.includes(bu))
-        console.log(data)
         let valueOpen = checkValue(data.filter((e) => e.STSTUS === 'OPEN').map((e) => e.CAERB_COUNT))
         let valueClose = checkValue(data.filter((e) => e.STSTUS === 'CLOSE').map((e) => e.CAERB_COUNT))
         let valueTarget = checkValue(data.filter((e) => e.STSTUS === 'TARGET').map((e) => e.CAERB_COUNT))
@@ -181,6 +179,138 @@ const getAnnualCAERB = (bu) => {
         }
         valueCaerbOpenClose.innerHTML = `${valueOpen}/${valueClose}`
         valueCaerbTaget.innerHTML = valueTarget
+    })
+}
+
+const getSankeyData = (bu) => {
+    const getDataOBACost = () => {
+        return $.ajax({
+            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost003',
+            dataType: 'jsonp',
+            jsonp: 'jsonpCallback',
+        })
+    }
+    const getDataOBARate = () => {
+        return $.ajax({
+            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Rate002',
+            dataType: 'jsonp',
+            jsonp: 'jsonpCallback',
+        })
+    }
+    const getDataCustomerClaim = () => {
+        return $.ajax({
+            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-Customer_Claim002',
+            dataType: 'jsonp',
+            jsonp: 'jsonpCallback',
+        })
+    }
+    $.when(getDataOBACost(), getDataOBARate(), getDataCustomerClaim()).then((cost, rate, customerclaim) => {
+        // AA => 'AA-BD4, AUTO-BD5'
+        if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
+        else bu = [bu]
+        console.log(bu)
+        const dataRate = rate[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+        const dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+        const dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+
+        console.log('Rate:', dataRate)
+        console.log('Cost:', dataCost)
+        console.log('Customer Claim:', dataClaim)
+
+        const chartSankey = document.querySelector('.chart-sankey')
+        const kpiColor = {
+            'OBA Sorting Rate': '#70E0E0',
+            'OBA Sorting Cost': '#E0FF70',
+            'Customer Claim': '#FFA8E0',
+        }
+
+        // customer
+        const customerName = Array.from(
+            new Set(
+                [
+                    dataRate.map((e) => e.CUST_GROUP),
+                    dataCost.map((e) => e.CUST_GROUP),
+                    dataClaim.map((e) => e.CUSTOMER_GROUP),
+                ].flat()
+            )
+        ).sort()
+        const colorRightList = generateColor(customerName.length)
+
+        // obj to echarts
+        const obj = {}
+        obj.value = []
+        // left source
+        for (let i = 0; i < 3; i++) {
+            let key = Object.keys(kpiColor)[i]
+            let value = Object.values(kpiColor)[i]
+            if (i === 0) {
+                if (dataRate.length > 0)
+                    obj.value.push({
+                        name: key,
+                        itemStyle: { color: value },
+                    })
+                else return ''
+            } else if (i === 1) {
+                if (dataCost.length > 0)
+                    obj.value.push({
+                        name: key,
+                        itemStyle: { color: value },
+                    })
+                else return ''
+            } else if (i === 2) {
+                if (dataClaim.length > 0)
+                    obj.value.push({
+                        name: key,
+                        itemStyle: { color: value },
+                    })
+                else return ''
+            }
+        }
+        // right target
+        customerName.forEach((item, index) => {
+            obj.value.push({ name: item, itemStyle: { color: colorRightList[index] } })
+        })
+        // links
+        obj.links = []
+        Object.keys(kpiColor).forEach((category, index) => {
+            if (index === 0) {
+                const totalValue = dataRate.map((e) => e.INSPECTION_QTY).reduce((a, b) => a + b)
+                dataRate.forEach((item) => {
+                    const value = item.INSPECTION_QTY / totalValue
+                    obj.links.push({
+                        source: category,
+                        target: item.CUST_GROUP,
+                        value: value,
+                        lineStyle: { color: 'gradient' },
+                    })
+                })
+            } else if (index === 1) {
+                const totalValue = dataCost.map((e) => e.SORTING_FEE).reduce((a, b) => a + b)
+                dataCost.forEach((item) => {
+                    const value = item.SORTING_FEE / totalValue
+                    obj.links.push({
+                        source: category,
+                        target: item.CUST_GROUP,
+                        value: value,
+                        lineStyle: { color: 'gradient' },
+                    })
+                })
+            } else if (index === 2) {
+                // const totalValue = dataClaim.map((e) => e.INSPECTION_QTY).reduce((a, b) => a + b)
+                const totalValue = dataClaim.map((e) => e.TOTAL_COST).length
+                dataClaim.forEach((item) => {
+                    const value = 1 / totalValue
+                    obj.links.push({
+                        source: category,
+                        target: item.CUSTOMER_GROUP,
+                        value: value,
+                        lineStyle: { color: 'gradient' },
+                    })
+                })
+            }
+        })
+
+        paintChartSankey(chartSankey, obj)
     })
 }
 
@@ -198,6 +328,7 @@ const getKpiData = (bu) => {
     }
     allData().then((res) => {
         const { kpi, kpiTrend, kpiShare } = res
+        console.log('=======', kpiShare.data)
         const titleIndex = ['OBA Sorting Rate', '當月預估 OBA Sorting Cost', 'Customer Claim']
         const tdData = (type, color) => {
             let tdContent = ''
@@ -357,7 +488,7 @@ const getKpiData = (bu) => {
         titleIndex.forEach((item, index) => {
             tdChart(item, index + 1)
         })
-        renderSankey()
+        // renderSankey()
     })
 }
 
@@ -367,6 +498,7 @@ const navClick = (bu) => {
     getAnnualOBACost(bu)
     getAnnualCAERB(bu)
     getKpiData(bu)
+    getSankeyData(bu)
 }
 function calculateRate(data) {
     const totalValue = data.length
@@ -572,10 +704,6 @@ const renderNavBar = (data) => {
         if (item === buSelected) {
             navBar.innerHTML += `<a class="nav-item nav-link active" href="#">${item}</a>`
             navClick(buSelected)
-            getAnnualKpiData(buSelected)
-            getAnnualOBACost(buSelected)
-            getAnnualCAERB(buSelected)
-            getKpiData(buSelected)
         } else navBar.innerHTML += `<a class="nav-item nav-link" href="#">${item}</a>`
     })
 }
