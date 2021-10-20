@@ -52,6 +52,7 @@ const redLamp = [
     '9/9',
 ]
 
+// get json
 const getCustomerRankingData = (bu) => {
     axios.post(hostName + 'warroom_customer_ranking.php', qs.stringify({ Bu: bu })).then((res) => {
         let data = res.data
@@ -98,26 +99,12 @@ const getCustomerRankingData = (bu) => {
     })
 }
 
-const getAnuualKpiData = (bu) => {
+const getAnnualKpiData = (bu) => {
     axios.post(hostName + 'warroom_annual_metrics.php', qs.stringify({ Bu: bu })).then((res) => {
         const data = res.data[0]
         // dom
-        const valueObaAnnualActual = document.querySelector('.value-oba-annual-actual'),
-            valueObaAnnualTarget = document.querySelector('.value-oba-annual-target'),
-            valueCaerbOpenClose = document.querySelector('.value-caerb-open-close'),
-            valueCaerbTarget = document.querySelector('.value-caerb-target'),
-            chartOba = document.querySelector('.chart-oba'),
+        const chartOba = document.querySelector('.chart-oba'),
             chartcaerb = document.querySelector('.chart-caerb')
-
-        valueObaAnnualActual.innerHTML = `${Math.floor((data.OBA_Annual_Cost / 1000000) * 100) / 100} M`
-        valueObaAnnualTarget.innerHTML = `${Math.floor((data.OBA_Annual_Target / 1000000) * 100) / 100} M`
-        valueCaerbOpenClose.innerHTML = `${data.CAERB_Open}/${data.CAERB_close}`
-        valueCaerbTarget.innerHTML = `${data.CAERB_target}`
-        if (Number(data.OBA_Annual_Cost) >= Number(data.OBA_Annual_Target)) valueObaAnnualActual.style.color = 'red'
-        else valueObaAnnualActual.style.color = 'blue'
-        if (Number(data.CAERB_Open) + Number(data.CAERB_close) >= Number(data.CAERB_target))
-            valueCaerbOpenClose.style.color = 'red'
-        else valueCaerbOpenClose.style.color = 'blue'
 
         // echarts OBA Cost
         const objOba = {}
@@ -144,6 +131,56 @@ const getAnuualKpiData = (bu) => {
 
         paintChartsGauge(chartOba, objOba)
         paintChartsGauge(chartcaerb, objCaerb)
+    })
+}
+
+const getAnnualOBACost = (bu) => {
+    $.ajax({
+        url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost001',
+        dataType: 'jsonp',
+        jsonp: 'jsonpCallback',
+    }).then((res) => {
+        if (bu === 'AA') bu = 'BD'
+        const data = res.filter((e) => e.APPLICATION.includes(bu))
+        console.log(data)
+        let valueCost = checkValue(data.map((e) => e.SORTING_FEE))
+        let valueTarget = checkValue(data.map((e) => e.TARGET))
+        valueCost = Math.floor(valueCost / 10000) / 100
+        valueTarget = Math.floor(valueTarget / 10000) / 100
+        const valueObaAnnualActual = document.querySelector('.value-oba-annual-actual'),
+            valueObaAnnualTarget = document.querySelector('.value-oba-annual-target')
+        if (valueCost >= valueTarget) {
+            valueObaAnnualActual.style.color = 'red'
+        } else {
+            valueObaAnnualActual.style.color = 'blue'
+        }
+        valueObaAnnualActual.innerHTML = `${valueCost}M`
+        valueObaAnnualTarget.innerHTML = `${valueTarget}M`
+    })
+}
+
+const getAnnualCAERB = (bu) => {
+    $.ajax({
+        url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-CAERB001',
+        dataType: 'jsonp',
+        jsonp: 'jsonpCallback',
+    }).then((res) => {
+        if (bu === 'AA') bu = 'BD'
+        const data = res.filter((e) => e.APPLICATION.includes(bu))
+        console.log(data)
+        let valueOpen = checkValue(data.filter((e) => e.STSTUS === 'OPEN').map((e) => e.CAERB_COUNT))
+        let valueClose = checkValue(data.filter((e) => e.STSTUS === 'CLOSE').map((e) => e.CAERB_COUNT))
+        let valueTarget = checkValue(data.filter((e) => e.STSTUS === 'TARGET').map((e) => e.CAERB_COUNT))
+        const valueCaerbOpenClose = document.querySelector('.value-caerb-open-close'),
+            valueCaerbTaget = document.querySelector('.value-caerb-target')
+
+        if (valueOpen + valueClose >= valueTarget) {
+            valueCaerbOpenClose.style.color = 'red'
+        } else {
+            valueCaerbOpenClose.style.color = 'blue'
+        }
+        valueCaerbOpenClose.innerHTML = `${valueOpen}/${valueClose}`
+        valueCaerbTaget.innerHTML = valueTarget
     })
 }
 
@@ -270,7 +307,6 @@ const getKpiData = (bu) => {
         const renderSankey = () => {
             const chartSankey = document.querySelector('.chart-sankey')
             let data = kpiShare.data
-            console.log(data)
             const kpiColor = {
                 'OBA Sorting Rate': '#70E0E0',
                 'OBA Sorting Cost': '#E0FF70',
@@ -327,7 +363,9 @@ const getKpiData = (bu) => {
 
 const navClick = (bu) => {
     getCustomerRankingData(bu)
-    getAnuualKpiData(bu)
+    getAnnualKpiData(bu)
+    getAnnualOBACost(bu)
+    getAnnualCAERB(bu)
     getKpiData(bu)
 }
 function calculateRate(data) {
@@ -460,7 +498,6 @@ const paintChartLine = (dom, data) => {
             label: {
                 show: true,
                 formatter: function (e) {
-                    console.log(e.seriesName)
                     if (e.seriesName.includes('Rate')) return `${e.data}%`
                     else return `${e.data}M`
                 },
@@ -535,20 +572,32 @@ const renderNavBar = (data) => {
         if (item === buSelected) {
             navBar.innerHTML += `<a class="nav-item nav-link active" href="#">${item}</a>`
             navClick(buSelected)
-            getAnuualKpiData(buSelected)
+            getAnnualKpiData(buSelected)
+            getAnnualOBACost(buSelected)
+            getAnnualCAERB(buSelected)
             getKpiData(buSelected)
         } else navBar.innerHTML += `<a class="nav-item nav-link" href="#">${item}</a>`
     })
 }
 renderNavBar(bu)
 
+// function
+function checkValue(arr) {
+    let value
+    if (arr.length < 1) value = 0
+    else if (arr.length > 1) value = arr.reduce((a, b) => a + b)
+    else value = arr[0]
+    return value
+}
 // Event
 navBar.addEventListener('click', (params) => {
     let target = params.target
-    Array.from(navBar.children).forEach((el) => {
-        el.classList.remove('active')
-    })
-    target.classList.add('active')
-    buSelected = target.innerText
-    navClick(buSelected)
+    if (target.matches('.nav-link')) {
+        Array.from(navBar.children).forEach((el) => {
+            el.classList.remove('active')
+        })
+        target.classList.add('active')
+        buSelected = target.innerText
+        navClick(buSelected)
+    }
 })
