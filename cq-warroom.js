@@ -435,41 +435,6 @@ const getKpiData = (bu) => {
             else return ''
         }
 
-        const renderSankey = () => {
-            const chartSankey = document.querySelector('.chart-sankey')
-            let data = kpiShare.data
-            const kpiColor = {
-                'OBA Sorting Rate': '#70E0E0',
-                'OBA Sorting Cost': '#E0FF70',
-                'Customer Claim': '#FFA8E0',
-            }
-            const kpi = Array.from(new Set(data.map((e) => e.KPI)))
-            const customerName = Array.from(new Set(data.map((e) => e.CustomerName)))
-            const colorList = generateColor(customerName.length)
-            const obj = {}
-            obj.value = []
-            kpi.forEach((item) => {
-                obj.value.push({
-                    name: item,
-                    itemStyle: { color: kpiColor[item.trim()] },
-                })
-            })
-            customerName.forEach((item, index) => {
-                obj.value.push({ name: item, itemStyle: { color: colorList[index] } })
-            })
-            obj.links = []
-            data.forEach((item) => {
-                obj.links.push({
-                    source: item.KPI,
-                    target: item.CustomerName,
-                    value: item.Share,
-                    lineStyle: { color: 'gradient' },
-                })
-            })
-
-            paintChartSankey(chartSankey, obj)
-        }
-
         const trendTbody = document.querySelector('.block-trend tbody')
         let tbodyContent = ''
         titleIndex.forEach((item, index) => {
@@ -488,7 +453,6 @@ const getKpiData = (bu) => {
         titleIndex.forEach((item, index) => {
             tdChart(item, index + 1)
         })
-        // renderSankey()
     })
 }
 
