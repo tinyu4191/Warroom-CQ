@@ -72,7 +72,7 @@ const getCustomerRankingData = (bu) => {
                     break
 
                 default:
-                    console.log(value)
+                    break
             }
             return lamp
         }
@@ -182,6 +182,154 @@ const getAnnualCAERB = (bu) => {
     })
 }
 
+const getKpiJson = (bu) => {
+    const getDataOBACost = () => {
+        return $.ajax({
+            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost002',
+            dataType: 'jsonp',
+            jsonp: 'jsonpCallback',
+        })
+    }
+    const getDataOBARate = () => {
+        return $.ajax({
+            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Rate001',
+            dataType: 'jsonp',
+            jsonp: 'jsonpCallback',
+        })
+    }
+    const getDataCustomerClaim = () => {
+        return $.ajax({
+            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-Customer_Claim001',
+            dataType: 'jsonp',
+            jsonp: 'jsonpCallback',
+        })
+    }
+    $.when(getDataOBACost(), getDataOBARate(), getDataCustomerClaim()).then((cost, rate, customerclaim) => {
+        // AA => 'AA-BD4, AUTO-BD5'
+        if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
+        else bu = [bu]
+        const dataRate = rate[0].filter((e) => bu.includes(e.APPLICATION))
+        const dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+        const dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+        let targetRate, targetCost, targetCliam
+
+        let obaRateMax = 0
+        let obaCostMax = 0
+        let customerClaimMax = 0
+        const tdData = (index, color) => {
+            let valueAcutal, valueTarget, imgLight
+            if (index === 0) {
+                const theNewest = Math.max(...dataRate.map((e) => e.YM))
+                const [dataTheNewest] = dataRate.filter((e) => e.YM === String(theNewest))
+                valueAcutal = dataTheNewest.SORT_RATE + '/月'
+                valueTarget = dataTheNewest.TARGET + '/月'
+
+                targetRate = Number(dataTheNewest.TARGET.replace('%', ''))
+            } else if (index === 1) {
+                const theNewest = Math.max(...dataCost.map((e) => e.YM))
+                const [dataTheNewest] = dataCost.filter((e) => e.YM === String(theNewest))
+
+                valueAcutal = Math.floor(dataTheNewest.SORTING_FEE / 10000) / 100 + 'M/月'
+                valueTarget = Math.floor(dataTheNewest.TARGET / 10000) / 100 + 'M/月'
+
+                targetCost = Math.floor(dataTheNewest.TARGET / 10000) / 100
+            } else if (index === 2) {
+                const theNewest = Math.max(...dataClaim.map((e) => e.YM))
+                const [dataTheNewest] = dataClaim.filter((e) => e.YM === String(theNewest))
+
+                valueAcutal = (dataTheNewest.TOTAL_COST === null ? 0 : dataTheNewest.TOTAL_COST) + 'M/月'
+                valueTarget = dataTheNewest.TARGET + 'M/月'
+
+                targetCliam = Number(dataTheNewest.TARGET)
+            }
+            let tdContent = `
+            <td style="background-color:${color};">${valueAcutal}</td>
+            <td style="background-color:${color};">${valueTarget}</td>
+            <td style="background-color:${color};"><img src="./images/${imgLight}.png"/></td>
+            `
+            return tdContent
+        }
+
+        const tdChart = (type, index) => {
+            const chartDom = document.querySelector(`.chart-line-${index}`)
+            const obj = {}
+            if (type === 0) {
+                dataRate.forEach((e) => {
+                    if (obaRateMax < Number(e.TARGET.replace('%', '')) * 1.5) {
+                        obaRateMax = Number(e.TARGET.replace('%', '')) * 1.5
+                    }
+                    if (obaRateMax < Number(e.SORT_RATE.replace('%', ''))) {
+                        obaRateMax = Number(e.SORT_RATE.replace('%', '')) * 1.05
+                    }
+                })
+                obj.name = 'Sorting Rate'
+                obj.xAxis = dataRate.map((e) => Number(e.YM.slice(-2)))
+                obj.value = dataRate.map((e) => Number(e.SORT_RATE.replace('%', '')))
+                obj.target = targetRate
+                obj.max = obaRateMax
+                obj.gt = -0.01
+            } else if (type === 1) {
+                dataCost.forEach((e) => {
+                    if (obaCostMax < e.TARGET * 1.5) {
+                        obaCostMax = e.TARGET * 1.5
+                    }
+                    if (obaCostMax < e.SORTING_FEE) {
+                        obaCostMax = e.SORTING_FEE * 1.05
+                    }
+                })
+                obj.name = 'Sorting Cost'
+                obj.xAxis = dataCost.map((e) => Number(e.YM.slice(-2)))
+                obj.value = dataCost.map((e) => Math.floor(e.SORTING_FEE / 10000) / 100)
+                obj.target = targetCost
+                obj.max = Math.floor(obaCostMax / 10000) / 100
+                obj.gt = -1
+            } else if (type === 2) {
+                dataClaim.forEach((e) => {
+                    if (customerClaimMax < Number(e.TARGET) * 1.5) {
+                        customerClaimMax = Number(e.TARGET) * 1.5
+                    }
+                    if (customerClaimMax < Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST)) {
+                        customerClaimMax = Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST) * 1.05
+                    }
+                })
+                obj.name = 'Customer Claim'
+                obj.xAxis = dataClaim.map((e) => Number(e.YM.slice(-2)))
+                obj.value = dataClaim.map((e) => Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST))
+                obj.target = targetCliam
+                obj.max = customerClaimMax
+                obj.gt = -1
+            }
+            paintChartLine(chartDom, obj)
+        }
+
+        const titleIndex = ['OBA Sorting Rate', '當月預估 OBA Sorting Cost', 'Customer Claim']
+
+        const lastDiv = (index, color) => {
+            if (index === 0) return `<td class="chart-sankey" rowspan="3" style="background-color:${color}"></td>`
+            else return ''
+        }
+
+        const trendTbody = document.querySelector('.block-trend tbody')
+        let tbodyContent = ''
+        titleIndex.forEach((item, index) => {
+            let backgrounColor = index % 2 === 0 ? '#C0DEFF' : '#DEFFC0'
+            tbodyContent += `
+          <tr>
+            <td style="background-color:${backgrounColor}">${item.split(' ').join('<br>')}</td>
+            ${tdData(index, backgrounColor)}
+            <td style="background-color:${backgrounColor}"><div class="chart-line-${index + 1}"></div></td>
+            ${lastDiv(index, backgrounColor)}
+          </tr>
+          `
+        })
+
+        trendTbody.innerHTML = tbodyContent
+        titleIndex.forEach((item, index) => {
+            tdChart(index, index + 1)
+        })
+    })
+}
+
 const getSankeyData = (bu) => {
     const getDataOBACost = () => {
         return $.ajax({
@@ -208,14 +356,9 @@ const getSankeyData = (bu) => {
         // AA => 'AA-BD4, AUTO-BD5'
         if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
         else bu = [bu]
-        console.log(bu)
         const dataRate = rate[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
         const dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
         const dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-
-        console.log('Rate:', dataRate)
-        console.log('Cost:', dataCost)
-        console.log('Customer Claim:', dataClaim)
 
         const chartSankey = document.querySelector('.chart-sankey')
         const kpiColor = {
@@ -328,7 +471,6 @@ const getKpiData = (bu) => {
     }
     allData().then((res) => {
         const { kpi, kpiTrend, kpiShare } = res
-        console.log('=======', kpiShare.data)
         const titleIndex = ['OBA Sorting Rate', '當月預估 OBA Sorting Cost', 'Customer Claim']
         const tdData = (type, color) => {
             let tdContent = ''
@@ -461,7 +603,8 @@ const navClick = (bu) => {
     getAnnualKpiData(bu)
     getAnnualOBACost(bu)
     getAnnualCAERB(bu)
-    getKpiData(bu)
+    // getKpiData(bu)
+    getKpiJson(bu)
     getSankeyData(bu)
 }
 function calculateRate(data) {
@@ -553,9 +696,6 @@ const paintChartLine = (dom, data) => {
     let myChart = echarts.init(dom)
     let option
     option = {
-        // tooltip: {
-        //     trigger: 'axis',
-        // },
         grid: {
             right: '1%',
             bottom: '35%',
