@@ -1,0 +1,366 @@
+:root {
+    font-family: Microsoft JhengHei;
+    font-size: 12px;
+    --half-height: 400px;
+}
+
+html,
+body {
+    background-color: #2a3f54;
+}
+
+header {
+    margin: 10px 0 25px;
+}
+
+.title {
+    color: white;
+    font-size: 32px;
+    font-style: italic;
+}
+.title span {
+    font-size: 24px;
+}
+
+.navbar {
+    padding: 0;
+    height: 20px;
+    -webkit-box-align: end;
+    -ms-flex-align: end;
+    align-items: flex-end;
+}
+.navbar .navbar-nav {
+    margin-left: 10px;
+}
+.navbar .navbar-nav a {
+    font-size: 14px;
+    border: 1px solid #d0d0d0;
+    background-color: #f8f9fa;
+    border-radius: 5px 5px 0 0;
+    width: 100px;
+    padding: 10px;
+    text-align: center;
+}
+.navbar .navbar-nav a:hover {
+    font-weight: bolder;
+    background-color: white;
+}
+.navbar .navbar-nav a.active {
+    color: white !important;
+    font-weight: bolder;
+    background-color: #007bff;
+}
+.navbar .navbar-nav a + a {
+    margin-left: 5px;
+}
+
+.container {
+    max-width: 100vw !important;
+    height: calc(100vh - 90px);
+    border-top: 1px solid transparent;
+}
+.container .row {
+    margin-top: 10px;
+    max-height: var(--half-height);
+}
+.container .row div[class^='col'] {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-flow: column nowrap;
+    flex-flow: column nowrap;
+    border-radius: 10px;
+}
+.container .row .block-title {
+    height: 65px;
+    background-color: white;
+    border-radius: 15px 15px 0 0;
+    font-size: 28px;
+    font-weight: bolder;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+}
+.container .row .block-title span {
+    width: 100%;
+    margin: 0 20px;
+    padding: 5px;
+    text-align: center;
+}
+.container .row .block-content {
+    height: calc(var(--half-height) - 75px);
+    background-color: white;
+    border-radius: 0 0 15px 15px;
+    padding: 10px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: stretch;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+}
+.container .row .block-content .rate-box {
+    width: 140px;
+    padding: 5px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-flow: column nowrap;
+    flex-flow: column nowrap;
+}
+.container .row .block-content .rate-box div {
+    border: 2px solid #fecb37;
+    border-radius: 10px;
+}
+.container .row .block-content .rate-box div + div {
+    margin-top: 5px;
+}
+.container .row .block-content .rate-box .rate-title {
+    -webkit-box-flex: 0;
+    -ms-flex: 0 0 50px;
+    flex: 0 0 50px;
+    background-color: #fac090;
+    font-size: 32px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+}
+.container .row .block-content .rate-box .rate-value {
+    -webkit-box-flex: 3;
+    -ms-flex: 3 0 0px;
+    flex: 3 0 0;
+    background-color: #fbe8d9;
+    font-size: 40px;
+    font-weight: bolder;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+}
+.container .row .block-content .table-box {
+    -webkit-box-flex: 3;
+    -ms-flex: 3 0 0px;
+    flex: 3 0 0;
+    height: 100%;
+    max-height: 100%;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-flow: column nowrap;
+    flex-flow: column nowrap;
+}
+.container .row .block-content .table-box > div:nth-child(1) {
+    background-color: #d0d0d0;
+    border-radius: 10px 10px 0 0;
+}
+.container .row .block-content .content {
+    -webkit-box-flex: 1;
+    -ms-flex: 1 0 0px;
+    flex: 1 0 0;
+    font-size: 28px;
+    font-weight: bolder;
+    text-align: center;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-flow: column nowrap;
+    flex-flow: column nowrap;
+}
+.container .row .block-content .content .chart-title {
+    -webkit-box-flex: 1;
+    -ms-flex: 1 0 0px;
+    flex: 1 0 0;
+    font-size: 20px;
+}
+.container .row .block-content .content .chart-value {
+    -webkit-box-flex: 1;
+    -ms-flex: 1 0 0px;
+    flex: 1 0 0;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+}
+.container .row .block-content .content .chart-value div {
+    -webkit-box-flex: 1;
+    -ms-flex: 1 0 0px;
+    flex: 1 0 0;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-flow: column nowrap;
+    flex-flow: column nowrap;
+}
+.container .row .block-content .content .chart-value div div:first-child {
+    font-size: 20px;
+}
+.container .row .block-content .content .chart-value div div + div {
+    margin-top: 10px;
+}
+.container .row .block-content .content .chart-main {
+    -ms-flex-preferred-size: 200px;
+    flex-basis: 200px;
+}
+.container .row .block-content .content + .content {
+    margin-left: 5px;
+}
+
+.table-box table,
+.table-box td,
+.table-box th {
+    font-size: 16px;
+    font-weight: bolder;
+    padding: 3px;
+}
+.table-box table {
+    width: 100%;
+}
+.table-box table thead {
+    position: sticky;
+    top: 0;
+    text-align: center;
+}
+.table-box table thead th {
+    font-size: 24px;
+}
+.table-box table tbody {
+    text-align: center;
+}
+.table-box table tbody .new-case {
+    color: red;
+    font-weight: bolder;
+    -webkit-animation: fade 600ms infinite;
+    animation: fade 600ms infinite;
+}
+.table-box table tbody .old-case {
+    visibility: hidden;
+}
+.table-box table tbody tr + tr {
+    border-top: 2px solid #f0f0f0;
+}
+.table-box table tbody td {
+    vertical-align: middle;
+}
+.table-box table tbody td div {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+}
+.table-box table tbody td div span {
+    -webkit-box-flex: 1;
+    -ms-flex: 1 0 0px;
+    flex: 1 0 0;
+    text-align: end;
+    padding-right: 10px;
+}
+.table-box table tbody td img {
+    width: 100%;
+    height: 40px;
+}
+.table-box table tbody tr td:first-child {
+    width: 30%;
+}
+.table-box div:nth-child(2) {
+    overflow-y: auto;
+}
+
+.block-trend table {
+    width: 100%;
+    font-size: 18px;
+    font-weight: bolder;
+    text-align: center;
+}
+.block-trend thead {
+    text-decoration: underline;
+}
+.block-trend thead th {
+    height: 50px;
+    vertical-align: middle;
+}
+.block-trend tbody tr {
+    height: 100px;
+}
+.block-trend tbody tr td {
+    vertical-align: middle;
+}
+.block-trend tbody tr td:first-child {
+    line-height: 24px;
+}
+.block-trend tbody tr td img {
+    width: 70%;
+}
+.block-trend tbody tr td div {
+    width: 100%;
+    height: 100px;
+}
+
+.circle {
+    height: 29px;
+    width: 29px;
+    border-radius: 50%;
+}
+.circle.green {
+    background-color: #28a745;
+}
+.circle.yellow {
+    background-color: #ffc107;
+}
+.circle.red {
+    background-color: #dc3545;
+}
+
+@-webkit-keyframes fade {
+    from {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fade {
+    from {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
+    to {
+        opacity: 1;
+    }
+} /*# sourceMappingURL=cq-warroom.css.map */

@@ -1,0 +1,421 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <!-- Meta, title, CSS, favicons, etc. -->
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <title>CQE個人戰情室</title>
+
+        <!-- Bootstrap -->
+        <link href="http://tnvqis03/Dashboard_Template/vendors/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+        <!-- Font Awesome -->
+        <link
+            href="http://tnvqis03/Dashboard_Template/vendors/fontAwesome47/css/font-awesome.min.css"
+            rel="stylesheet"
+        />
+        <!-- NProgress -->
+        <link href="http://tnvqis03/Dashboard_Template/vendors/nprogress/nprogress.css" rel="stylesheet" />
+        <!-- iCheck -->
+        <link href="http://tnvqis03/Dashboard_Template/vendors/iCheck/skins/flat/green.css" rel="stylesheet" />
+
+        <!-- bootstrap-progressbar -->
+        <link
+            href="http://tnvqis03/Dashboard_Template/vendors/bootstrap-progressbar/css/bootstrap-progressbar-3.3.4.min.css"
+            rel="stylesheet"
+        />
+        <!-- JQVMap -->
+        <link href="http://tnvqis03/Dashboard_Template/vendors/jqvmap/dist/jqvmap.min.css" rel="stylesheet" />
+        <!-- bootstrap-daterangepicker -->
+        <link
+            href="http://tnvqis03/Dashboard_Template/vendors/bootstrap-daterangepicker/daterangepicker.css"
+            rel="stylesheet"
+        />
+
+        <!-- multiselect JS -->
+        <link rel="stylesheet" href="../build/js/CQ/multiselectJS/css/bootstrap-multiselect.min.css" />
+
+        <!-- Custom Theme Style -->
+        <link href="http://tnvqis03/Dashboard_Template/build/css/custom.min.css" rel="stylesheet" />
+        <link href="http://tnvqis03/Dashboard_Template/build/css/custom_MIS.css" rel="stylesheet" />
+
+        <!-- Datatables -->
+        <link
+            href="http://tnvqis03/Dashboard_Template/vendors/datatables.net-bs/css/dataTables.bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <link
+            href="http://tnvqis03/Dashboard_Template/vendors/datatables.net-buttons-bs/css/buttons.bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <link
+            href="http://tnvqis03/Dashboard_Template/vendors/datatables.net-fixedheader-bs/css/fixedHeader.bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <link
+            href="http://tnvqis03/Dashboard_Template/vendors/datatables.net-responsive-bs/css/responsive.bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <link
+            href="http://tnvqis03/Dashboard_Template/vendors/datatables.net-scroller-bs/css/scroller.bootstrap.min.css"
+            rel="stylesheet"
+        />
+
+        <!-- Custom Theme Style -->
+        <link href="../build/css/custom.min.css" rel="stylesheet" />
+        <!-- Google font -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bungee&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="./css/cq-warroom.css" />
+    </head>
+    <body class="nav-md" style="overflow-x: hidden">
+        <div class="container body">
+            <div class="main_container">
+                <div class="col-md-3 left_col">
+                    <div class="left_col scroll-view">
+                        <div class="navbar nav_title" style="border: 0">
+                            <a href="index.html" class="site_title" style="margin-top: 0">
+                                <!--i class="fa fa-paw"></i-->
+                                <span>
+                                    <img src="images/favicon.png" align="absmiddle" />
+                                    QM</span
+                                ></a
+                            >
+                        </div>
+
+                        <div class="clearfix"></div>
+
+                        <!-- menu profile quick info -->
+                        <div class="profile clearfix">
+                            <div class="profile_pic"></div>
+                            <div class="profile_info">
+                                <span>Welcome,</span>
+                                <h2 id="empName"></h2>
+                            </div>
+                        </div>
+                        <!-- /menu profile quick info -->
+
+                        <br />
+
+                        <!-- sidebar menu -->
+                        <div id="sidebar-menu" class="main_menu_side hidden-print main_menu">
+                            <div class="menu_section" id="menuRoot">
+                                <ul class="nav side-menu"></ul>
+                            </div>
+                        </div>
+                        <!-- /sidebar menu -->
+
+                        <!-- /menu footer buttons -->
+                        <div class="sidebar-footer hidden-small">
+                            <a data-toggle="tooltip" data-placement="top" title="Settings">
+                                <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+                            </a>
+                            <a data-toggle="tooltip" data-placement="top" title="FullScreen">
+                                <span class="glyphicon glyphicon-fullscreen" aria-hidden="true"></span>
+                            </a>
+                            <a data-toggle="tooltip" data-placement="top" title="Lock">
+                                <span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span>
+                            </a>
+                            <a data-toggle="tooltip" data-placement="top" title="Logout" href="javascript:logout()">
+                                <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
+                            </a>
+                        </div>
+                        <!-- /menu footer buttons -->
+                    </div>
+                </div>
+
+                <!-- top navigation -->
+                <div class="top_nav">
+                    <div class="nav_menu">
+                        <div class="nav toggle">
+                            <a id="menu_toggle"><i class="fa fa-bars"></i></a>
+                        </div>
+                        <nav class="nav navbar-nav">
+                            <ul class="navbar-right">
+                                <li class="nav-item dropdown open" style="padding-left: 15px">
+                                    <a
+                                        href="javascript:;"
+                                        class="user-profile dropdown-toggle"
+                                        aria-haspopup="true"
+                                        id="navbarDropdown"
+                                        data-toggle="dropdown"
+                                        aria-expanded="false"
+                                    >
+                                        <span id="navEmpName"></span>
+                                    </a>
+                                    <div
+                                        class="dropdown-menu dropdown-usermenu pull-right"
+                                        aria-labelledby="navbarDropdown"
+                                    >
+                                        <a class="dropdown-item" href="javascript:;"> Profile</a>
+                                        <a class="dropdown-item" href="javascript:;">
+                                            <span class="badge bg-red pull-right">50%</span>
+                                            <span>Settings</span>
+                                        </a>
+                                        <a class="dropdown-item" href="javascript:;">Help</a>
+                                        <a class="dropdown-item" href="javascript:logout()"
+                                            ><i class="fa fa-sign-out pull-right"></i> Log Out</a
+                                        >
+                                    </div>
+                                </li>
+
+                                <li role="presentation" class="nav-item dropdown open">
+                                    <a
+                                        href="javascript:;"
+                                        class="dropdown-toggle info-number"
+                                        id="navbarDropdown1"
+                                        data-toggle="dropdown"
+                                        aria-expanded="false"
+                                    >
+                                        <i class="fa fa-envelope-o"></i>
+                                        <span class="badge bg-green">6</span>
+                                    </a>
+                                    <ul
+                                        class="dropdown-menu list-unstyled msg_list"
+                                        role="menu"
+                                        aria-labelledby="navbarDropdown1"
+                                    >
+                                        <li class="nav-item">
+                                            <a class="dropdown-item">
+                                                <span class="image"
+                                                    ><img src="images/img.jpg" alt="Profile Image"
+                                                /></span>
+                                                <span>
+                                                    <span>John Smith</span>
+                                                    <span class="time">3 mins ago</span>
+                                                </span>
+                                                <span class="message">
+                                                    Film festivals used to be do-or-die moments for movie makers. They
+                                                    were where...
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="dropdown-item">
+                                                <span class="image"
+                                                    ><img src="images/img.jpg" alt="Profile Image"
+                                                /></span>
+                                                <span>
+                                                    <span>John Smith</span>
+                                                    <span class="time">3 mins ago</span>
+                                                </span>
+                                                <span class="message">
+                                                    Film festivals used to be do-or-die moments for movie makers. They
+                                                    were where...
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="dropdown-item">
+                                                <span class="image"
+                                                    ><img src="images/img.jpg" alt="Profile Image"
+                                                /></span>
+                                                <span>
+                                                    <span>John Smith</span>
+                                                    <span class="time">3 mins ago</span>
+                                                </span>
+                                                <span class="message">
+                                                    Film festivals used to be do-or-die moments for movie makers. They
+                                                    were where...
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="dropdown-item">
+                                                <span class="image"
+                                                    ><img src="images/img.jpg" alt="Profile Image"
+                                                /></span>
+                                                <span>
+                                                    <span>John Smith</span>
+                                                    <span class="time">3 mins ago</span>
+                                                </span>
+                                                <span class="message">
+                                                    Film festivals used to be do-or-die moments for movie makers. They
+                                                    were where...
+                                                </span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <div class="text-center">
+                                                <a class="dropdown-item">
+                                                    <strong>See All Alerts</strong>
+                                                    <i class="fa fa-angle-right"></i>
+                                                </a>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                <!-- /top navigation -->
+
+                <!-- page content -->
+                <div class="right_col" role="main" style="padding: 10px 0; background-color: #2a3f54">
+                    <div id="main">
+                        <header>
+                            <em class="title">品質戰情圖 <span>銷(CQ)</span></em>
+                        </header>
+                        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                            <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+                                <div class="navbar-nav"></div>
+                            </div>
+                        </nav>
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="block-title">
+                                        <span style="background-color: #fffacd">客戶排名</span>
+                                    </div>
+                                    <div class="block-content" style="padding: 10px 30px">
+                                        <div class="rate-box">
+                                            <div class="rate-title"><span>達標率</span></div>
+                                            <div class="rate-value"><span>100%</span></div>
+                                        </div>
+                                        <div class="table-box">
+                                            <div>
+                                                <table>
+                                                    <thead>
+                                                        <tr>
+                                                            <th width="25%">客戶</th>
+                                                            <th width="25%" colspan="2" style="text-align: right">
+                                                                Past
+                                                            </th>
+                                                            <th width="25%" colspan="2" style="text-align: right">
+                                                                Current
+                                                            </th>
+                                                            <th width="15%"></th>
+                                                        </tr>
+                                                    </thead>
+                                                </table>
+                                            </div>
+                                            <div>
+                                                <table>
+                                                    <tbody class="rank-tbody"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="block-title">
+                                        <span style="background-color: #e0ffff">年度CQE指標</span>
+                                    </div>
+                                    <div class="block-content">
+                                        <div class="content">
+                                            <div class="chart-title">OBA Sorting Cost (NTD)</div>
+                                            <div class="chart-value">
+                                                <div>
+                                                    <div>Actual</div>
+                                                    <div class="value-oba-annual-actual"></div>
+                                                </div>
+                                                <div>
+                                                    <div>Target</div>
+                                                    <div class="value-oba-annual-target"></div>
+                                                </div>
+                                            </div>
+                                            <div class="chart-main chart-oba"></div>
+                                        </div>
+                                        <div class="content">
+                                            <div class="chart-title">CAERB case</div>
+                                            <div class="chart-value">
+                                                <div>
+                                                    <div>Open/Close</div>
+                                                    <div class="value-caerb-open-close"></div>
+                                                </div>
+                                                <div>
+                                                    <div>Target</div>
+                                                    <div class="value-caerb-target"></div>
+                                                </div>
+                                            </div>
+                                            <div class="chart-main chart-caerb"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12 block-trend">
+                                    <div
+                                        class="block-content"
+                                        style="border-radius: 15px; height: auto; margin-bottom: 10px"
+                                    >
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th width="10%">KPI</th>
+                                                    <th width="10%">Actual</th>
+                                                    <th width="10%">Target</th>
+                                                    <th width="5%">燈號</th>
+                                                    <th width="35%">Trend</th>
+                                                    <th width="30%">Share</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /page content -->
+            </div>
+        </div>
+
+        <!-- jQuery -->
+        <script src="http://tnvqis03/Dashboard_Template/vendors/jquery/dist/jquery.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/build/js/jquery.url.js"></script>
+        <!-- Bootstrap -->
+        <script src="http://tnvqis03/Dashboard_Template/vendors/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- FastClick -->
+        <script src="http://tnvqis03/Dashboard_Template/vendors/fastclick/lib/fastclick.js"></script>
+        <!-- NProgress -->
+        <script src="http://tnvqis03/Dashboard_Template/vendors/nprogress/nprogress.js"></script>
+        <!-- iCheck -->
+        <script src="http://tnvqis03/Dashboard_Template/vendors/iCheck/icheck.min.js"></script>
+        <!-- bootstrap-daterangepicker -->
+        <script src="http://tnvqis03/Dashboard_Template/vendors/moment/min/moment.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/bootstrap-daterangepicker/daterangepicker.js"></script>
+
+        <!-- ECharts -->
+        <script src="http://tnvqis03/Dashboard_Template/vendors/echarts/echarts-5.0.2/dist/echarts.min.js"></script>
+
+        <!-- multiselect JS -->
+        <script src="../build/js/CQ/multiselectJS/js/bootstrap-multiselect.min.js"></script>
+        <!-- linQ -->
+        <script src="../build/js/CQ/linqjs/linq.js"></script>
+        <!-- Datatables -->
+        <script src="http://tnvqis03/Dashboard_Template/vendors/datatables.net-bs/js/jquery.dataTables.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/datatables.net-bs/js/dataTables.bootstrap.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/datatables.net-buttons-bs/js/buttons.bootstrap.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/datatables.net-buttons/js/buttons.flash.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/datatables.net-buttons/js/buttons.html5.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/datatables.net-buttons/js/buttons.print.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/datatables.net-fixedheader/js/dataTables.fixedHeader.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/datatables.net-keytable/js/dataTables.keyTable.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/datatables.net-responsive/js/dataTables.responsive.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/datatables.net-responsive-bs/js/responsive.bootstrap.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/datatables.net-scroller/js/dataTables.scroller.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/jszip/dist/jszip.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/pdfmake/build/pdfmake.min.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/vendors/pdfmake/build/vfs_fonts.js"></script>
+        <!-- Custom Theme Scripts -->
+        <script src="http://tnvqis03/Dashboard_Template/build/js/menu.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/build/js/custom.js"></script>
+        <script src="http://tnvqis03/Dashboard_Template/build/js/custom_MIS.js"></script>
+
+        <!-- axios -->
+        <script src="../build/js/CQ/axios-master/dist/axios.min.js"></script>
+        <!-- QS -->
+        <script src="../build/js/CQ/qs-master/dist/qs.js"></script>
+        <script src="../build/js/CQ/cq-warroom.js"></script>
+    </body>
+</html>
