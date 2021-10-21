@@ -54,48 +54,88 @@ const redLamp = [
 
 // get json
 const getCustomerRankingData = (bu) => {
-    axios.post(hostName + 'warroom_customer_ranking.php', qs.stringify({ Bu: bu })).then((res) => {
+    axios.get(hostName + 'warroom_customer_ranking.php').then((res) => {
         let data = res.data
+        if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
+        else bu = [bu]
         const tbody = document.querySelector('.rank-tbody')
+        const dataBu = data.filter((e) => bu.includes(e.application))
+        const customer = Array.from(new Set(dataBu.map((e) => e.brand))).sort()
         tbody.innerHTML = ''
-        const switchLamp = (value) => {
-            let lamp = ''
-            switch (true) {
-                case greenLamp.includes(value):
-                    lamp = 'green'
-                    break
-                case yellowLamp.includes(value):
-                    lamp = 'yellow'
-                    break
-                case redLamp.includes(value):
-                    lamp = 'red'
-                    break
-
-                default:
-                    break
+        customer.forEach((item) => {
+            const data = dataBu.filter((e) => e.brand === item)
+            const [actualCurrent] = data.filter((e) => e.TYPE === 'actural_c')
+            const [actualPast] = data.filter((e) => e.TYPE === 'actural_p')
+            const [forecastPast] = data.filter((e) => e.TYPE === 'forecast_c')
+            const [forecastCurrent] = data.filter((e) => e.TYPE === 'forecast_p')
+            let dateActual = new Date(`${actualCurrent.year} ${actualCurrent.month}`).getTime()
+            let today = new Date()
+            let thisMonth = today.getMonth()
+            let dateLast3Month = today.setMonth(today.getMonth() - 3)
+            let pastDiv = ''
+            let currentDiv = ''
+            let isNew = false
+            const checkLight = (lamp) => {
+                let light = ''
+                switch (lamp) {
+                    case 'G':
+                        light = 'green'
+                        break
+                    case 'Y':
+                        light = 'yellow'
+                        break
+                    case 'R':
+                        light = 'red'
+                        break
+                    default:
+                        break
+                }
+                return light
             }
-            return lamp
-        }
-        const regex = new RegExp('^[a-zA-Z]+$')
-        data.forEach((item) => {
-            item.PastLamp = switchLamp(item.Past)
-            item.CurrentLamp = switchLamp(item.Current)
-            const pastDiv = `<div><span>${regex.test(item.Past) ? '' : item.Past}</span><div class="circle ${
-                item.PastLamp
-            }"></div></div>`
-            const currentDiv = `<div><span>${regex.test(item.Current) ? '' : item.Current}</span><div class="circle ${
-                item.CurrentLamp
-            }"></div></div>`
+            const regex = new RegExp('^[a-zA-Z]')
+            /* Actual Current日期距離現在時間超過3個月 */
+            /* True: Past: Actual_Past , Current: Actual_Current */
+            /* False: Past: Actual_Current , Current: Forecast_Current */
+            if (dateActual >= dateLast3Month) {
+                pastDiv = `
+                <div>
+                    <span>${regex.test(actualPast.rank) ? '' : actualPast.rank}</span>
+                    <div class="circle ${checkLight(actualPast.lamp)}"></div>
+                </div>
+                `
+                currentDiv = `
+                <div>
+                    <span>${regex.test(actualCurrent.rank) ? '' : actualCurrent.rank}</span>
+                    <div class="light-current circle ${checkLight(actualCurrent.lamp)}"></div>
+                </div>
+                `
+                if (Number(actualCurrent.month) === thisMonth) isNew = true
+            } else {
+                pastDiv = `
+                <div>
+                    <span>${regex.test(actualCurrent.rank) ? '' : actualCurrent.rank}</span>
+                    <div class="circle ${checkLight(actualCurrent.lamp)}"></div>
+                </div>
+                `
+                currentDiv = `
+                <div>
+                    <span>${regex.test(forecastCurrent.rank) ? '' : forecastCurrent.rank}</span>
+                    <div class="light-current circle ${checkLight(forecastCurrent.lamp)}"></div>
+                </div>
+                `
+                if (Number(forecastCurrent.month) === thisMonth) isNew = true
+            }
+
             tbody.innerHTML += `
         <tr>
-           <td><img src="./images/${item.CustomerName}.png"/></td>
+           <td><img src="./images/${item}.png" alt="${item}"/></td>
            <td colspan="2">${pastDiv}</td>
            <td colspan="2">${currentDiv}</td>
-           <td class="${item.UpdateData === 'New' ? 'new-case' : 'old-case'}">${item.UpdateData}</td>
+           <td class="${isNew ? 'new-case' : 'old-case'}">New</td>
         </tr>
         `
         })
-        rateValue.innerHTML = calculateRate(data)
+        rateValue.innerHTML = calculateRate()
     })
 }
 
@@ -204,48 +244,103 @@ const getKpiJson = (bu) => {
             jsonp: 'jsonpCallback',
         })
     }
+
+    /* 燈號邏輯 */
+    const pictureLight = (past, current, type) => {
+        let str = ''
+        let props = []
+
+        if (type === 0) props = ['SORT_RATE', 'TARGET']
+        else if (type === 1) props = ['SORTING_FEE', 'TARGET']
+        else if (type === 2) props = ['TOTAL_COST', 'TARGET']
+        let valuePast, valueCurrent, valueTarget
+        if (type === 0) {
+            valuePast = Number(past[props[0]].replace('%', ''))
+            valueCurrent = Number(current[props[0]].replace('%', ''))
+            valueTarget = Number(current[props[1]].replace('%', ''))
+        } else {
+            valuePast = Number(past[props[0]])
+            valueCurrent = Number(current[props[0]])
+            valueTarget = Number(current[props[1]])
+        }
+        /* [達標/不達標] 這個月跟上個月比 */
+        if (valueCurrent <= valuePast) str += '達標'
+        else str += '不達標'
+
+        /* [好/持平/爛] 這個月跟Target比 */
+        if (valueCurrent < valueTarget) {
+            str += '好'
+        } else if (valueCurrent === valueTarget) {
+            str += '持平'
+        } else if (valueCurrent > valueTarget) {
+            str += '爛'
+        }
+        return str
+    }
+
     $.when(getDataOBACost(), getDataOBARate(), getDataCustomerClaim()).then((cost, rate, customerclaim) => {
         // AA => 'AA-BD4, AUTO-BD5'
         if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
         else bu = [bu]
-        const dataRate = rate[0].filter((e) => bu.includes(e.APPLICATION))
-        const dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-        const dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+        let dataRate = rate[0].filter((e) => bu.includes(e.APPLICATION))
+        let dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+        let dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
         let targetRate, targetCost, targetCliam
-
         let obaRateMax = 0
         let obaCostMax = 0
         let customerClaimMax = 0
         const tdData = (index, color) => {
             let valueAcutal, valueTarget, imgLight
             if (index === 0) {
-                const theNewest = Math.max(...dataRate.map((e) => e.YM))
-                const [dataTheNewest] = dataRate.filter((e) => e.YM === String(theNewest))
-                valueAcutal = dataTheNewest.SORT_RATE + '/月'
-                valueTarget = dataTheNewest.TARGET + '/月'
+                /* 資料依YM排序 */
+                dataRate.sort((a, b) => {
+                    const monthA = Number(a.YM.slice(-2))
+                    const monthB = Number(b.YM.slice(-2))
 
-                targetRate = Number(dataTheNewest.TARGET.replace('%', ''))
+                    return monthA - monthB
+                })
+                const [dataLastMonth, dataThisMonth] = dataRate.slice(-2)
+
+                valueAcutal = dataThisMonth.SORT_RATE + '/月'
+                valueTarget = dataThisMonth.TARGET + '/月'
+                imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
+
+                targetRate = Number(dataThisMonth.TARGET.replace('%', ''))
             } else if (index === 1) {
-                const theNewest = Math.max(...dataCost.map((e) => e.YM))
-                const [dataTheNewest] = dataCost.filter((e) => e.YM === String(theNewest))
+                /* 資料依YM排序 */
+                dataCost.sort((a, b) => {
+                    const monthA = Number(a.YM.slice(-2))
+                    const monthB = Number(b.YM.slice(-2))
 
-                valueAcutal = Math.floor(dataTheNewest.SORTING_FEE / 10000) / 100 + 'M/月'
-                valueTarget = Math.floor(dataTheNewest.TARGET / 10000) / 100 + 'M/月'
+                    return monthA - monthB
+                })
+                const [dataLastMonth, dataThisMonth] = dataCost.slice(-2)
 
-                targetCost = Math.floor(dataTheNewest.TARGET / 10000) / 100
+                valueAcutal = Math.floor(dataThisMonth.SORTING_FEE / 10000) / 100 + 'M/月'
+                valueTarget = Math.floor(dataThisMonth.TARGET / 10000) / 100 + 'M/月'
+                imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
+
+                targetCost = Math.floor(dataThisMonth.TARGET / 10000) / 100
             } else if (index === 2) {
-                const theNewest = Math.max(...dataClaim.map((e) => e.YM))
-                const [dataTheNewest] = dataClaim.filter((e) => e.YM === String(theNewest))
+                /* 資料依YM排序 */
+                dataClaim.sort((a, b) => {
+                    const monthA = Number(a.YM.slice(-2))
+                    const monthB = Number(b.YM.slice(-2))
 
-                valueAcutal = (dataTheNewest.TOTAL_COST === null ? 0 : dataTheNewest.TOTAL_COST) + 'M/月'
-                valueTarget = dataTheNewest.TARGET + 'M/月'
+                    return monthA - monthB
+                })
+                const [dataLastMonth, dataThisMonth] = dataClaim.slice(-2)
 
-                targetCliam = Number(dataTheNewest.TARGET)
+                valueAcutal = (dataThisMonth.TOTAL_COST === null ? 0 : dataThisMonth.TOTAL_COST) + 'M/月'
+                valueTarget = dataThisMonth.TARGET + 'M/月'
+                imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
+
+                targetCliam = Number(dataThisMonth.TARGET)
             }
             let tdContent = `
             <td style="background-color:${color};">${valueAcutal}</td>
             <td style="background-color:${color};">${valueTarget}</td>
-            <td style="background-color:${color};"><img src="./images/${imgLight}.png"/></td>
+            <td style="background-color:${color};"><img src="./images/${imgLight}.png" alt="燈號"/></td>
             `
             return tdContent
         }
@@ -254,6 +349,10 @@ const getKpiJson = (bu) => {
             const chartDom = document.querySelector(`.chart-line-${index}`)
             const obj = {}
             if (type === 0) {
+                /* Rate： AA 只取 AA-BD4 */
+                if (bu.includes('AA-BD4')) dataRate = dataRate.filter((e) => e.APPLICATION === 'AA-BD4')
+                /* 只抓近六個月 */
+                if (dataRate.length > 6) dataRate.shift()
                 dataRate.forEach((e) => {
                     if (obaRateMax < Number(e.TARGET.replace('%', '')) * 1.5) {
                         obaRateMax = Number(e.TARGET.replace('%', '')) * 1.5
@@ -269,6 +368,27 @@ const getKpiJson = (bu) => {
                 obj.max = obaRateMax
                 obj.gt = -0.01
             } else if (type === 1) {
+                /* AA */
+                if (bu.length > 1)
+                    dataCost = (() => {
+                        const ym = Array.from(new Set(dataCost.map((e) => e.YM)))
+                        const arr = []
+                        ym.forEach((month) => {
+                            arr.push({
+                                SORTING_FEE: dataCost
+                                    .filter((e) => e.YM === month)
+                                    .map((e) => e.SORTING_FEE)
+                                    .reduce((a, b) => a + b),
+                                TARGET: dataCost
+                                    .filter((e) => e.YM === month)
+                                    .map((e) => e.TARGET)
+                                    .reduce((a, b) => a + b),
+                                PRODUCT_TYPE: 'AA',
+                                YM: month,
+                            })
+                        })
+                        return arr
+                    })()
                 dataCost.forEach((e) => {
                     if (obaCostMax < e.TARGET * 1.5) {
                         obaCostMax = e.TARGET * 1.5
@@ -465,11 +585,16 @@ const navClick = (bu) => {
     getKpiJson(bu)
     getSankeyData(bu)
 }
-function calculateRate(data) {
-    const totalValue = data.length
-    const overTargetValue = data.filter((e) => e.CurrentLamp === 'green').length
 
-    return `${((overTargetValue / totalValue) * 100).toFixed(0)}%`
+function calculateRate() {
+    const lightCurrent = document.querySelectorAll('.light-current')
+    const total = lightCurrent.length
+    let green = 0
+    lightCurrent.forEach((e) => {
+        if (e.classList.contains('green')) green += 1
+    })
+
+    return Math.floor((green / total) * 100) + '%'
 }
 
 // echarts
