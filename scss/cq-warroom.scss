@@ -118,7 +118,12 @@ header {
                 flex: 3 0 0;
                 height: 100%;
                 max-height: 100%;
-                overflow-y: auto;
+                display: flex;
+                flex-flow: column nowrap;
+                & > div:nth-child(1) {
+                    background-color: #d0d0d0;
+                    border-radius: 10px 10px 0 0;
+                }
             }
             .content {
                 flex: 1 0 0;
@@ -162,14 +167,13 @@ header {
     th {
         font-size: 16px;
         font-weight: bolder;
-        padding: 5px;
+        padding: 3px;
     }
     table {
         width: 100%;
         thead {
             position: sticky;
             top: 0;
-            background-color: white;
             text-align: center;
             th {
                 font-size: 24px;
@@ -188,6 +192,9 @@ header {
             }
             .old-case {
                 visibility: hidden;
+            }
+            tr + tr {
+                border-top: 2px solid #f0f0f0;
             }
             td {
                 vertical-align: middle;
@@ -216,6 +223,9 @@ header {
                 // border-left: 2px solid #d0d0d0;
             }
         }
+    }
+    div:nth-child(2) {
+        overflow-y: auto;
     }
 }
 
