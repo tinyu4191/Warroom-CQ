@@ -134,6 +134,7 @@ header {
                 flex-flow: column nowrap;
                 .chart-title {
                     flex: 1 0 0;
+                    font-size: 20px;
                 }
                 .chart-value {
                     flex: 1 0 0;
@@ -151,7 +152,7 @@ header {
                     }
                 }
                 .chart-main {
-                    flex-basis: 200px;
+                    flex: 3 0 0;
                 }
             }
             .content + .content {

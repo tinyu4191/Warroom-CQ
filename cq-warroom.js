@@ -263,18 +263,19 @@ const getKpiJson = (bu) => {
             valueCurrent = Number(current[props[0]])
             valueTarget = Number(current[props[1]])
         }
+
         /* [達標/不達標] 這個月跟上個月比 */
-        if (valueCurrent <= valuePast) str += '達標'
-        else str += '不達標'
+        str = valueCurrent <= valueTarget ? '達標' : '不達標'
 
         /* [好/持平/爛] 這個月跟Target比 */
-        if (valueCurrent < valueTarget) {
+        if (valueCurrent < valuePast) {
             str += '好'
-        } else if (valueCurrent === valueTarget) {
+        } else if (valueCurrent === valuePast) {
             str += '持平'
-        } else if (valueCurrent > valueTarget) {
+        } else if (valueCurrent > valuePast) {
             str += '爛'
         }
+
         return str
     }
 

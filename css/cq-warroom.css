@@ -195,6 +195,7 @@ header {
   -webkit-box-flex: 1;
       -ms-flex: 1 0 0px;
           flex: 1 0 0;
+  font-size: 20px;
 }
 .container .row .block-content .content .chart-value {
   -webkit-box-flex: 1;
@@ -223,8 +224,9 @@ header {
   margin-top: 10px;
 }
 .container .row .block-content .content .chart-main {
-  -ms-flex-preferred-size: 200px;
-      flex-basis: 200px;
+  -webkit-box-flex: 3;
+      -ms-flex: 3 0 0px;
+          flex: 3 0 0;
 }
 .container .row .block-content .content + .content {
   margin-left: 5px;
