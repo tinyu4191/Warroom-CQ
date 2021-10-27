@@ -5,4 +5,7 @@ kit/
 test.html
 
 # version IT底下不追蹤
-version IT/
+version_IT/
+
+# version IT底下不追蹤
+images/
