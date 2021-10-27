@@ -313,6 +313,7 @@ const getKpiJson = (bu) => {
 
                 targetRate = Number(dataThisMonth.TARGET.replace('%', ''))
             } else if (index === 1) {
+                console.log(bu, dataCost)
                 /* 資料依YM排序 */
                 dataCost.sort((a, b) => {
                     const monthA = Number(a.YM.slice(-2))
