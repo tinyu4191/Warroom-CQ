@@ -8,6 +8,11 @@ const navBar = document.querySelector('.navbar-nav'),
     rateValue = document.querySelector('.rate-value')
 // Value Default
 let buSelected = 'TV'
+// Date
+const today = new Date()
+const yearCurrent = today.getFullYear()
+const monthCurrent = today.getDate() < 5 ? today.getMonth() : today.getMonth() + 1
+console.log(monthCurrent)
 // Object
 const bu = ['TV', 'CE', 'IAVM', 'MONITOR', 'MP', 'NB', 'TABLET', 'AA']
 const greenLamp = [
@@ -317,7 +322,13 @@ const getKpiJson = (bu) => {
                 })
                 const [dataLastMonth, dataThisMonth] = dataCost.slice(-2)
 
-                valueAcutal = Math.floor(dataThisMonth.SORTING_FEE / 10000) / 100 + 'M/月'
+                /* Cost計算 value * (這個月已過天數 / 這個月天數) */
+                const month = today.getMonth()
+                const dayThismonth = new Date(yearCurrent, month + 1, 0).getDate()
+                const dateToday = today.getDate()
+                const rate = dateToday / dayThismonth
+                console.log(dataThisMonth.SORTING_FEE, rate)
+                valueAcutal = Math.floor((dataThisMonth.SORTING_FEE * rate) / 10000) / 100 + 'M/月'
                 valueTarget = Math.floor(dataThisMonth.TARGET / 10000) / 100 + 'M/月'
                 imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
 
@@ -330,6 +341,11 @@ const getKpiJson = (bu) => {
 
                     return monthA - monthB
                 })
+                if (dataClaim.length < 2) {
+                    dataClaim = new Array(2 - dataClaim.length)
+                        .fill({ TOTAL_COST: 0, TARGET: 0, YM: '0000' })
+                        .concat(dataClaim)
+                }
                 const [dataLastMonth, dataThisMonth] = dataClaim.slice(-2)
 
                 valueAcutal = (dataThisMonth.TOTAL_COST === null ? 0 : dataThisMonth.TOTAL_COST) + 'M/月'
@@ -405,6 +421,8 @@ const getKpiJson = (bu) => {
                 obj.max = Math.floor(obaCostMax / 10000) / 100
                 obj.gt = -1
             } else if (type === 2) {
+                /* 資料不足6個月 補0*/
+                console.log(dataClaim)
                 dataClaim.forEach((e) => {
                     if (customerClaimMax < Number(e.TARGET) * 1.5) {
                         customerClaimMax = Number(e.TARGET) * 1.5
@@ -416,6 +434,15 @@ const getKpiJson = (bu) => {
                 obj.name = 'Customer Claim'
                 obj.xAxis = dataClaim.map((e) => Number(e.YM.slice(-2)))
                 obj.value = dataClaim.map((e) => Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST))
+                /* 資料不足6個月 補0*/
+                if (obj.xAxis.length < 6) {
+                    let l = 6 - obj.xAxis.length
+                    const min = Math.min(...obj.xAxis)
+                    for (let i = 1; i <= l; i++) {
+                        obj.xAxis.unshift(min - i)
+                        obj.value.unshift(0)
+                    }
+                }
                 obj.target = targetCliam
                 obj.max = customerClaimMax
                 obj.gt = -1
