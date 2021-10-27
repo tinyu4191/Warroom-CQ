@@ -13,6 +13,11 @@ const today = new Date()
 const yearCurrent = today.getFullYear()
 const monthCurrent = today.getDate() < 5 ? today.getMonth() : today.getMonth() + 1
 console.log(monthCurrent)
+const arrSixmonth = []
+for (let i = 0; i < 6; i++) {
+    arrSixmonth.unshift(monthCurrent - i)
+}
+console.log(arrSixmonth)
 // Object
 const bu = ['TV', 'CE', 'IAVM', 'MONITOR', 'MP', 'NB', 'TABLET', 'AA']
 const greenLamp = [
@@ -379,7 +384,7 @@ const getKpiJson = (bu) => {
                     }
                 })
                 obj.name = 'Sorting Rate'
-                obj.xAxis = dataRate.map((e) => Number(e.YM.slice(-2)))
+                obj.xAxis = arrSixmonth
                 obj.value = dataRate.map((e) => Number(e.SORT_RATE.replace('%', '')))
                 obj.target = targetRate
                 obj.max = obaRateMax
@@ -415,7 +420,7 @@ const getKpiJson = (bu) => {
                     }
                 })
                 obj.name = 'Sorting Cost'
-                obj.xAxis = dataCost.map((e) => Number(e.YM.slice(-2)))
+                obj.xAxis = arrSixmonth
                 obj.value = dataCost.map((e) => Math.floor(e.SORTING_FEE / 10000) / 100)
                 obj.target = targetCost
                 obj.max = Math.floor(obaCostMax / 10000) / 100
@@ -432,14 +437,12 @@ const getKpiJson = (bu) => {
                     }
                 })
                 obj.name = 'Customer Claim'
-                obj.xAxis = dataClaim.map((e) => Number(e.YM.slice(-2)))
+                obj.xAxis = arrSixmonth
                 obj.value = dataClaim.map((e) => Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST))
                 /* 資料不足6個月 補0*/
-                if (obj.xAxis.length < 6) {
-                    let l = 6 - obj.xAxis.length
-                    const min = Math.min(...obj.xAxis)
+                if (obj.value.length < 6) {
+                    let l = 6 - obj.value.length
                     for (let i = 1; i <= l; i++) {
-                        obj.xAxis.unshift(min - i)
                         obj.value.unshift(0)
                     }
                 }
