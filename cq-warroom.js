@@ -249,6 +249,13 @@ const getKpiJson = (bu) => {
             jsonp: 'jsonpCallback',
         })
     }
+    const getDataActualClaim = () => {
+        return $.ajax({
+            url: 'http://tnvqis03/JsonService/jsonQuery.do?dataRequestName=CRC_IN_APPR_PROC_AMT001',
+            dataType: 'jsonp',
+            jsonp: 'jsonpCallback',
+        })
+    }
 
     /* 燈號邏輯 */
     const pictureLight = (past, current, type) => {
@@ -284,185 +291,201 @@ const getKpiJson = (bu) => {
         return str
     }
 
-    $.when(getDataOBACost(), getDataOBARate(), getDataCustomerClaim()).then((cost, rate, customerclaim) => {
-        // AA => 'AA-BD4, AUTO-BD5'
-        if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
-        else bu = [bu]
-        let dataRate = rate[0].filter((e) => bu.includes(e.APPLICATION))
-        let dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-        let dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-        let targetRate, targetCost, targetCliam
-        let obaRateMax = 0
-        let obaCostMax = 0
-        let customerClaimMax = 0
-        const tdData = (index, color) => {
-            let valueAcutal, valueTarget, imgLight
-            if (index === 0) {
-                /* 資料依YM排序 */
-                dataRate.sort((a, b) => {
-                    const monthA = Number(a.YM.slice(-2))
-                    const monthB = Number(b.YM.slice(-2))
-
-                    return monthA - monthB
+    $.when(getDataOBACost(), getDataOBARate(), getDataCustomerClaim(), getDataActualClaim()).then(
+        (cost, rate, customerclaim, actualClaim) => {
+            // AA => 'AA-BD4, AUTO-BD5'
+            if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
+            else bu = [bu]
+            let dataRate = rate[0].filter((e) => bu.includes(e.APPLICATION))
+            let dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+            let dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+            let dataActualClaim = actualClaim[0]
+                .map((item) => {
+                    console.log(item)
+                    if (item.PRODUCT_TYPE === 'OPEN_CELL_TV') item.PRODUCT_TYPE = 'TV'
+                    else if (item.PRODUCT_TYPE === 'IAV' || item.PRODUCT_TYPE === 'MEDICAL') item.PRODUCT_TYPE = 'IAVM'
+                    else if (item.PRODUCT_TYPE === 'AA-BD4' || item.PRODUCT_TYPE === 'AUTO-BD5')
+                        item.PRODUCT_TYPE = 'AA'
+                    return item
                 })
-                const [dataLastMonth, dataThisMonth] = dataRate.slice(-2)
+                .filter((e) => bu.includes(e.PRODUCT_TYPE))
+            console.log(dataActualClaim)
+            let targetRate, targetCost, targetCliam
+            let obaRateMax = 0
+            let obaCostMax = 0
+            let customerClaimMax = 0
+            const tdData = (index, color) => {
+                let valueAcutal, valueTarget, imgLight
+                if (index === 0) {
+                    /* 資料依YM排序 */
+                    dataRate.sort((a, b) => {
+                        const monthA = Number(a.YM.slice(-2))
+                        const monthB = Number(b.YM.slice(-2))
 
-                valueAcutal = dataThisMonth.SORT_RATE + '/月'
-                valueTarget = dataThisMonth.TARGET + '/月'
-                imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
+                        return monthA - monthB
+                    })
+                    const [dataLastMonth, dataThisMonth] = dataRate.slice(-2)
 
-                targetRate = Number(dataThisMonth.TARGET.replace('%', ''))
-            } else if (index === 1) {
-                console.log(bu, dataCost)
-                /* 資料依YM排序 */
-                dataCost.sort((a, b) => {
-                    const monthA = Number(a.YM.slice(-2))
-                    const monthB = Number(b.YM.slice(-2))
+                    valueAcutal = dataThisMonth.SORT_RATE + '/月'
+                    valueTarget = dataThisMonth.TARGET + '/月'
+                    imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
 
-                    return monthA - monthB
-                })
-                const [dataLastMonth, dataThisMonth] = dataCost.slice(-2)
+                    targetRate = Number(dataThisMonth.TARGET.replace('%', ''))
+                } else if (index === 1) {
+                    console.log(bu, dataCost)
+                    /* 資料依YM排序 */
+                    dataCost.sort((a, b) => {
+                        const monthA = Number(a.YM.slice(-2))
+                        const monthB = Number(b.YM.slice(-2))
 
-                /* Cost計算 value * (這個月已過天數 / 這個月天數) */
-                const month = today.getMonth()
-                const dayThismonth = new Date(yearCurrent, month + 1, 0).getDate()
-                const dateToday = today.getDate()
-                const rate = dateToday / dayThismonth
-                console.log(dataThisMonth.SORTING_FEE, rate)
-                valueAcutal = Math.floor((dataThisMonth.SORTING_FEE * rate) / 10000) / 100 + 'M/月'
-                valueTarget = Math.floor(dataThisMonth.TARGET / 10000) / 100 + 'M/月'
-                imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
+                        return monthA - monthB
+                    })
+                    const [dataLastMonth, dataThisMonth] = dataCost.slice(-2)
 
-                targetCost = Math.floor(dataThisMonth.TARGET / 10000) / 100
-            } else if (index === 2) {
-                /* 資料依YM排序 */
-                dataClaim.sort((a, b) => {
-                    const monthA = Number(a.YM.slice(-2))
-                    const monthB = Number(b.YM.slice(-2))
+                    /* Cost計算 value * (這個月已過天數 / 這個月天數) */
+                    const month = today.getMonth()
+                    const dayThismonth = new Date(yearCurrent, month + 1, 0).getDate()
+                    const dateToday = today.getDate()
+                    const rate = dateToday / dayThismonth
+                    console.log(dataThisMonth.SORTING_FEE, rate)
+                    valueAcutal = Math.floor((dataThisMonth.SORTING_FEE * rate) / 10000) / 100 + 'M/月'
+                    valueTarget = Math.floor(dataThisMonth.TARGET / 10000) / 100 + 'M/月'
+                    imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
 
-                    return monthA - monthB
-                })
-                if (dataClaim.length < 2) {
-                    dataClaim = new Array(2 - dataClaim.length)
-                        .fill({ TOTAL_COST: 0, TARGET: 0, YM: '0000' })
-                        .concat(dataClaim)
+                    targetCost = Math.floor(dataThisMonth.TARGET / 10000) / 100
+                } else if (index === 2) {
+                    /* 資料依YM排序 */
+                    dataClaim.sort((a, b) => {
+                        const monthA = Number(a.YM.slice(-2))
+                        const monthB = Number(b.YM.slice(-2))
+
+                        return monthA - monthB
+                    })
+                    if (dataClaim.length < 2) {
+                        dataClaim = new Array(2 - dataClaim.length)
+                            .fill({ TOTAL_COST: 0, TARGET: 0, YM: '0000' })
+                            .concat(dataClaim)
+                    }
+                    const [dataLastMonth, dataThisMonth] = dataClaim.slice(-2)
+
+                    /* Actual Claim */
+                    let valueActualClaim = dataActualClaim.map((e) => e.AMOUNT)
+                    valueActualClaim = valueActualClaim.length > 0 ? valueActualClaim.reduce((a, b) => a + b) : 0
+                    console.log(valueActualClaim)
+                    valueAcutal = Math.floor(valueActualClaim / 10000) / 100 + 'M/月'
+                    valueTarget = dataThisMonth.TARGET + 'M/月'
+                    imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
+
+                    targetCliam = Number(dataThisMonth.TARGET)
                 }
-                const [dataLastMonth, dataThisMonth] = dataClaim.slice(-2)
-
-                valueAcutal = (dataThisMonth.TOTAL_COST === null ? 0 : dataThisMonth.TOTAL_COST) + 'M/月'
-                valueTarget = dataThisMonth.TARGET + 'M/月'
-                imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
-
-                targetCliam = Number(dataThisMonth.TARGET)
-            }
-            let tdContent = `
+                let tdContent = `
             <td style="background-color:${color};">${valueAcutal}</td>
             <td style="background-color:${color};">${valueTarget}</td>
             <td style="background-color:${color};"><img src="./images/${imgLight}.png" alt="燈號"/></td>
             `
-            return tdContent
-        }
-
-        const tdChart = (type, index) => {
-            const chartDom = document.querySelector(`.chart-line-${index}`)
-            const obj = {}
-            if (type === 0) {
-                /* Rate： AA 只取 AA-BD4 */
-                if (bu.includes('AA-BD4')) dataRate = dataRate.filter((e) => e.APPLICATION === 'AA-BD4')
-                /* 只抓近六個月 */
-                if (dataRate.length > 6) dataRate.shift()
-                dataRate.forEach((e) => {
-                    if (obaRateMax < Number(e.TARGET.replace('%', '')) * 1.5) {
-                        obaRateMax = Number(e.TARGET.replace('%', '')) * 1.5
-                    }
-                    if (obaRateMax < Number(e.SORT_RATE.replace('%', ''))) {
-                        obaRateMax = Number(e.SORT_RATE.replace('%', '')) * 1.05
-                    }
-                })
-                obj.name = 'Sorting Rate'
-                obj.xAxis = dataRate.map((e) => Number(e.YM.slice(-2)))
-                obj.value = dataRate.map((e) => Number(e.SORT_RATE.replace('%', '')))
-                obj.target = targetRate
-                obj.max = obaRateMax
-                obj.gt = -0.01
-            } else if (type === 1) {
-                /* AA */
-                if (bu.length > 1)
-                    dataCost = (() => {
-                        const ym = Array.from(new Set(dataCost.map((e) => e.YM)))
-                        const arr = []
-                        ym.forEach((month) => {
-                            arr.push({
-                                SORTING_FEE: dataCost
-                                    .filter((e) => e.YM === month)
-                                    .map((e) => e.SORTING_FEE)
-                                    .reduce((a, b) => a + b),
-                                TARGET: dataCost
-                                    .filter((e) => e.YM === month)
-                                    .map((e) => e.TARGET)
-                                    .reduce((a, b) => a + b),
-                                PRODUCT_TYPE: 'AA',
-                                YM: month,
-                            })
-                        })
-                        return arr
-                    })()
-                dataCost.forEach((e) => {
-                    if (obaCostMax < e.TARGET * 1.5) {
-                        obaCostMax = e.TARGET * 1.5
-                    }
-                    if (obaCostMax < e.SORTING_FEE) {
-                        obaCostMax = e.SORTING_FEE * 1.05
-                    }
-                })
-                obj.name = 'Sorting Cost'
-                obj.xAxis = dataCost.map((e) => Number(e.YM.slice(-2)))
-                obj.value = dataCost.map((e) => Math.floor(e.SORTING_FEE / 10000) / 100)
-                obj.target = targetCost
-                obj.max = Math.floor(obaCostMax / 10000) / 100
-                obj.gt = -1
-            } else if (type === 2) {
-                /* 資料不足6個月 補0*/
-                console.log(dataClaim)
-                dataClaim.forEach((e) => {
-                    if (customerClaimMax < Number(e.TARGET) * 1.5) {
-                        customerClaimMax = Number(e.TARGET) * 1.5
-                    }
-                    if (customerClaimMax < Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST)) {
-                        customerClaimMax = Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST) * 1.05
-                    }
-                })
-                obj.name = 'Customer Claim'
-                obj.xAxis = dataClaim.map((e) => Number(e.YM.slice(-2)))
-                obj.value = dataClaim.map((e) => Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST))
-                /* 資料不足6個月 補0*/
-                if (obj.xAxis.length < 6) {
-                    let l = 6 - obj.xAxis.length
-                    const min = Math.min(...obj.xAxis)
-                    for (let i = 1; i <= l; i++) {
-                        obj.xAxis.unshift(min - i)
-                        obj.value.unshift(0)
-                    }
-                }
-                obj.target = targetCliam
-                obj.max = customerClaimMax
-                obj.gt = -1
+                return tdContent
             }
-            paintChartLine(chartDom, obj)
-        }
 
-        const titleIndex = ['OBA Sorting Rate', '當月預估 OBA Sorting Cost', 'Customer Claim']
+            const tdChart = (type, index) => {
+                const chartDom = document.querySelector(`.chart-line-${index}`)
+                const obj = {}
+                if (type === 0) {
+                    /* Rate： AA 只取 AA-BD4 */
+                    if (bu.includes('AA-BD4')) dataRate = dataRate.filter((e) => e.APPLICATION === 'AA-BD4')
+                    /* 只抓近六個月 */
+                    if (dataRate.length > 6) dataRate.shift()
+                    dataRate.forEach((e) => {
+                        if (obaRateMax < Number(e.TARGET.replace('%', '')) * 1.5) {
+                            obaRateMax = Number(e.TARGET.replace('%', '')) * 1.5
+                        }
+                        if (obaRateMax < Number(e.SORT_RATE.replace('%', ''))) {
+                            obaRateMax = Number(e.SORT_RATE.replace('%', '')) * 1.05
+                        }
+                    })
+                    obj.name = 'Sorting Rate'
+                    obj.xAxis = dataRate.map((e) => Number(e.YM.slice(-2)))
+                    obj.value = dataRate.map((e) => Number(e.SORT_RATE.replace('%', '')))
+                    obj.target = targetRate
+                    obj.max = obaRateMax
+                    obj.gt = -0.01
+                } else if (type === 1) {
+                    /* AA */
+                    if (bu.length > 1)
+                        dataCost = (() => {
+                            const ym = Array.from(new Set(dataCost.map((e) => e.YM)))
+                            const arr = []
+                            ym.forEach((month) => {
+                                arr.push({
+                                    SORTING_FEE: dataCost
+                                        .filter((e) => e.YM === month)
+                                        .map((e) => e.SORTING_FEE)
+                                        .reduce((a, b) => a + b),
+                                    TARGET: dataCost
+                                        .filter((e) => e.YM === month)
+                                        .map((e) => e.TARGET)
+                                        .reduce((a, b) => a + b),
+                                    PRODUCT_TYPE: 'AA',
+                                    YM: month,
+                                })
+                            })
+                            return arr
+                        })()
+                    dataCost.forEach((e) => {
+                        if (obaCostMax < e.TARGET * 1.5) {
+                            obaCostMax = e.TARGET * 1.5
+                        }
+                        if (obaCostMax < e.SORTING_FEE) {
+                            obaCostMax = e.SORTING_FEE * 1.05
+                        }
+                    })
+                    obj.name = 'Sorting Cost'
+                    obj.xAxis = dataCost.map((e) => Number(e.YM.slice(-2)))
+                    obj.value = dataCost.map((e) => Math.floor(e.SORTING_FEE / 10000) / 100)
+                    obj.target = targetCost
+                    obj.max = Math.floor(obaCostMax / 10000) / 100
+                    obj.gt = -1
+                } else if (type === 2) {
+                    /* 資料不足6個月 補0*/
+                    console.log(dataClaim)
+                    dataClaim.forEach((e) => {
+                        if (customerClaimMax < Number(e.TARGET) * 1.5) {
+                            customerClaimMax = Number(e.TARGET) * 1.5
+                        }
+                        if (customerClaimMax < Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST)) {
+                            customerClaimMax = Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST) * 1.05
+                        }
+                    })
+                    obj.name = 'Customer Claim'
+                    obj.xAxis = dataClaim.map((e) => Number(e.YM.slice(-2)))
+                    obj.value = dataClaim.map((e) => Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST))
+                    /* 資料不足6個月 補0*/
+                    if (obj.xAxis.length < 6) {
+                        let l = 6 - obj.xAxis.length
+                        const min = Math.min(...obj.xAxis)
+                        for (let i = 1; i <= l; i++) {
+                            obj.xAxis.unshift(min - i)
+                            obj.value.unshift(0)
+                        }
+                    }
+                    obj.target = targetCliam
+                    obj.max = customerClaimMax
+                    obj.gt = -1
+                }
+                paintChartLine(chartDom, obj)
+            }
 
-        const lastDiv = (index, color) => {
-            if (index === 0) return `<td class="chart-sankey" rowspan="3" style="background-color:${color}"></td>`
-            else return ''
-        }
+            const titleIndex = ['OBA Sorting Rate', '當月預估 OBA Sorting Cost', 'Customer Claim']
 
-        const trendTbody = document.querySelector('.block-trend tbody')
-        let tbodyContent = ''
-        titleIndex.forEach((item, index) => {
-            let backgrounColor = index % 2 === 0 ? '#C0DEFF' : '#DEFFC0'
-            tbodyContent += `
+            const lastDiv = (index, color) => {
+                if (index === 0) return `<td class="chart-sankey" rowspan="3" style="background-color:${color}"></td>`
+                else return ''
+            }
+
+            const trendTbody = document.querySelector('.block-trend tbody')
+            let tbodyContent = ''
+            titleIndex.forEach((item, index) => {
+                let backgrounColor = index % 2 === 0 ? '#C0DEFF' : '#DEFFC0'
+                tbodyContent += `
           <tr>
             <td style="background-color:${backgrounColor}">${item.split(' ').join('<br>')}</td>
             ${tdData(index, backgrounColor)}
@@ -470,13 +493,14 @@ const getKpiJson = (bu) => {
             ${lastDiv(index, backgrounColor)}
           </tr>
           `
-        })
+            })
 
-        trendTbody.innerHTML = tbodyContent
-        titleIndex.forEach((item, index) => {
-            tdChart(index, index + 1)
-        })
-    })
+            trendTbody.innerHTML = tbodyContent
+            titleIndex.forEach((item, index) => {
+                tdChart(index, index + 1)
+            })
+        }
+    )
 }
 
 const getSankeyData = (bu) => {
@@ -501,109 +525,127 @@ const getSankeyData = (bu) => {
             jsonp: 'jsonpCallback',
         })
     }
-    $.when(getDataOBACost(), getDataOBARate(), getDataCustomerClaim()).then((cost, rate, customerclaim) => {
-        // AA => 'AA-BD4, AUTO-BD5'
-        if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
-        else bu = [bu]
-        const dataRate = rate[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-        const dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-        const dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-
-        const chartSankey = document.querySelector('.chart-sankey')
-        const kpiColor = {
-            'OBA Sorting Rate': '#70E0E0',
-            'OBA Sorting Cost': '#E0FF70',
-            'Customer Claim': '#FFA8E0',
-        }
-
-        // customer
-        const customerName = Array.from(
-            new Set(
-                [
-                    dataRate.map((e) => e.CUST_GROUP),
-                    dataCost.map((e) => e.CUST_GROUP),
-                    dataClaim.map((e) => e.CUSTOMER_GROUP),
-                ].flat()
-            )
-        ).sort()
-        const colorRightList = generateColor(customerName.length)
-
-        // obj to echarts
-        const obj = {}
-        obj.value = []
-        // left source
-        for (let i = 0; i < 3; i++) {
-            let key = Object.keys(kpiColor)[i]
-            let value = Object.values(kpiColor)[i]
-            if (i === 0) {
-                if (dataRate.length > 0)
-                    obj.value.push({
-                        name: key,
-                        itemStyle: { color: value },
-                    })
-                else return ''
-            } else if (i === 1) {
-                if (dataCost.length > 0)
-                    obj.value.push({
-                        name: key,
-                        itemStyle: { color: value },
-                    })
-                else return ''
-            } else if (i === 2) {
-                if (dataClaim.length > 0)
-                    obj.value.push({
-                        name: key,
-                        itemStyle: { color: value },
-                    })
-                else return ''
-            }
-        }
-        // right target
-        customerName.forEach((item, index) => {
-            obj.value.push({ name: item, itemStyle: { color: colorRightList[index] } })
+    const getDataActualClaim = () => {
+        return $.ajax({
+            url: 'http://tnvqis03/JsonService/jsonQuery.do?dataRequestName=CRC_IN_APPR_PROC_AMT001',
+            dataType: 'jsonp',
+            jsonp: 'jsonpCallback',
         })
-        // links
-        obj.links = []
-        Object.keys(kpiColor).forEach((category, index) => {
-            if (index === 0) {
-                const totalValue = dataRate.map((e) => e.INSPECTION_QTY).reduce((a, b) => a + b)
-                dataRate.forEach((item) => {
-                    const value = item.INSPECTION_QTY / totalValue
-                    obj.links.push({
-                        source: category,
-                        target: item.CUST_GROUP,
-                        value: value,
-                        lineStyle: { color: 'gradient' },
-                    })
+    }
+    $.when(getDataOBACost(), getDataOBARate(), getDataCustomerClaim(), getDataActualClaim()).then(
+        (cost, rate, customerclaim, actualClaim) => {
+            // AA => 'AA-BD4, AUTO-BD5'
+            if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
+            else bu = [bu]
+            const dataRate = rate[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+            const dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+            const dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+            const dataActualClaim = actualClaim[0]
+                .map((item) => {
+                    if (item.PRODUCT_TYPE === 'OPEN_CELL_TV') item.PRODUCT_TYPE = 'TV'
+                    else if (item.PRODUCT_TYPE === 'IAV' || item.PRODUCT_TYPE === 'MEDICAL') item.PRODUCT_TYPE = 'IAVM'
+                    else if (item.PRODUCT_TYPE === 'AA-BD4' || item.PRODUCT_TYPE === 'AUTO-BD5')
+                        item.PRODUCT_TYPE = 'AA'
+                    return item
                 })
-            } else if (index === 1) {
-                const totalValue = dataCost.map((e) => e.SORTING_FEE).reduce((a, b) => a + b)
-                dataCost.forEach((item) => {
-                    const value = item.SORTING_FEE / totalValue
-                    obj.links.push({
-                        source: category,
-                        target: item.CUST_GROUP,
-                        value: value,
-                        lineStyle: { color: 'gradient' },
-                    })
-                })
-            } else if (index === 2) {
-                // const totalValue = dataClaim.map((e) => e.INSPECTION_QTY).reduce((a, b) => a + b)
-                const totalValue = dataClaim.map((e) => e.TOTAL_COST).length
-                dataClaim.forEach((item) => {
-                    const value = 1 / totalValue
-                    obj.links.push({
-                        source: category,
-                        target: item.CUSTOMER_GROUP,
-                        value: value,
-                        lineStyle: { color: 'gradient' },
-                    })
-                })
-            }
-        })
+                .filter((e) => bu.includes(e.PRODUCT_TYPE))
 
-        paintChartSankey(chartSankey, obj)
-    })
+            const chartSankey = document.querySelector('.chart-sankey')
+            const kpiColor = {
+                'OBA Sorting Rate': '#70E0E0',
+                'OBA Sorting Cost': '#E0FF70',
+                'Customer Claim': '#FFA8E0',
+            }
+
+            // customer
+            const customerName = Array.from(
+                new Set(
+                    [
+                        dataRate.map((e) => e.CUST_GROUP),
+                        dataCost.map((e) => e.CUST_GROUP),
+                        dataActualClaim.map((e) => e.CUST_GROUP),
+                    ].flat()
+                )
+            ).sort()
+            const colorRightList = generateColor(customerName.length)
+
+            // obj to echarts
+            const obj = {}
+            obj.value = []
+            // left source
+            for (let i = 0; i < 3; i++) {
+                let key = Object.keys(kpiColor)[i]
+                let value = Object.values(kpiColor)[i]
+                if (i === 0) {
+                    if (dataRate.length > 0)
+                        obj.value.push({
+                            name: key,
+                            itemStyle: { color: value },
+                        })
+                } else if (i === 1) {
+                    if (dataCost.length > 0)
+                        obj.value.push({
+                            name: key,
+                            itemStyle: { color: value },
+                        })
+                } else if (i === 2) {
+                    if (dataActualClaim.length > 0)
+                        obj.value.push({
+                            name: key,
+                            itemStyle: { color: value },
+                        })
+                }
+            }
+            // right target
+            customerName.forEach((item, index) => {
+                obj.value.push({ name: item, itemStyle: { color: colorRightList[index] } })
+            })
+            // links
+            obj.links = []
+            Object.keys(kpiColor).forEach((category, index) => {
+                if (index === 0) {
+                    if (dataRate.length < 1) return
+                    const totalValue = dataRate.map((e) => e.INSPECTION_QTY).reduce((a, b) => a + b)
+                    dataRate.forEach((item) => {
+                        const value = item.INSPECTION_QTY / totalValue
+                        obj.links.push({
+                            source: category,
+                            target: item.CUST_GROUP,
+                            value: value,
+                            lineStyle: { color: 'gradient' },
+                        })
+                    })
+                } else if (index === 1) {
+                    if (dataCost.length < 1) return
+                    const totalValue = dataCost.map((e) => e.SORTING_FEE).reduce((a, b) => a + b)
+                    dataCost.forEach((item) => {
+                        const value = item.SORTING_FEE / totalValue
+                        obj.links.push({
+                            source: category,
+                            target: item.CUST_GROUP,
+                            value: value,
+                            lineStyle: { color: 'gradient' },
+                        })
+                    })
+                } else if (index === 2) {
+                    if (dataActualClaim.length < 1) return
+                    const totalValue = dataActualClaim.map((e) => e.AMOUNT).reduce((a, b) => a + b)
+                    dataActualClaim.forEach((item) => {
+                        const value = item.AMOUNT / totalValue
+                        obj.links.push({
+                            source: category,
+                            target: item.CUST_GROUP,
+                            value: value,
+                            lineStyle: { color: 'gradient' },
+                        })
+                    })
+                }
+            })
+
+            console.log(bu, obj)
+            paintChartSankey(chartSankey, obj)
+        }
+    )
 }
 
 const navClick = (bu) => {
