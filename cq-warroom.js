@@ -302,7 +302,13 @@ const getKpiJson = (bu) => {
             let dataActualClaim = actualClaim[0]
                 .map((item) => {
                     if (item.PRODUCT_TYPE === 'OPEN_CELL_TV') item.PRODUCT_TYPE = 'TV'
-                    else if (item.PRODUCT_TYPE === 'IAV' || item.PRODUCT_TYPE === 'MEDICAL') item.PRODUCT_TYPE = 'IAVM'
+                    else if (
+                        item.PRODUCT_TYPE === 'IAV' ||
+                        item.PRODUCT_TYPE === 'MEDICAL' ||
+                        item.PRODUCT_TYPE === 'OPEN_CELL_XRAY'
+                    )
+                        item.PRODUCT_TYPE = 'IAVM'
+                    else if (item.PRODUCT_TYPE === 'OPEN_CELL_MONITOR') item.PRODUCT_TYPE = 'MONITOR'
                     else if (item.PRODUCT_TYPE === 'AA-BD4' || item.PRODUCT_TYPE === 'AUTO-BD5')
                         item.PRODUCT_TYPE = 'AA'
                     return item
@@ -350,6 +356,17 @@ const getKpiJson = (bu) => {
 
                     targetCost = Math.floor(dataThisMonth.TARGET / 10000) / 100
                 } else if (index === 2) {
+                    if (dataClaim.length < 2) {
+                        dataClaim = new Array(2 - dataClaim.length)
+                            .fill({
+                                TOTAL_COST: 0,
+                                TARGET: 0,
+                                YM: `${String(yearCurrent).slice(-2)}${
+                                    monthCurrent < 10 ? 0 + monthCurrent : monthCurrent
+                                }`,
+                            })
+                            .concat(dataClaim)
+                    }
                     /* 資料依YM排序 */
                     dataClaim.sort((a, b) => {
                         const monthA = Number(a.YM.slice(-2))
@@ -357,11 +374,6 @@ const getKpiJson = (bu) => {
 
                         return monthA - monthB
                     })
-                    if (dataClaim.length < 2) {
-                        dataClaim = new Array(2 - dataClaim.length)
-                            .fill({ TOTAL_COST: 0, TARGET: 0, YM: '0000' })
-                            .concat(dataClaim)
-                    }
                     const [dataLastMonth, dataThisMonth] = dataClaim.slice(-2)
 
                     /* Actual Claim */
@@ -455,9 +467,9 @@ const getKpiJson = (bu) => {
                     /* 資料不足6個月 補0*/
                     if (obj.xAxis.length < 6) {
                         let l = 6 - obj.xAxis.length
-                        const min = Math.min(...obj.xAxis)
+                        const max = Math.max(...obj.xAxis)
                         for (let i = 1; i <= l; i++) {
-                            obj.xAxis.unshift(min - i)
+                            obj.xAxis.unshift(max - obj.xAxis.length)
                             obj.value.unshift(0)
                         }
                     }
