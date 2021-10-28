@@ -301,7 +301,6 @@ const getKpiJson = (bu) => {
             let dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
             let dataActualClaim = actualClaim[0]
                 .map((item) => {
-                    console.log(item)
                     if (item.PRODUCT_TYPE === 'OPEN_CELL_TV') item.PRODUCT_TYPE = 'TV'
                     else if (item.PRODUCT_TYPE === 'IAV' || item.PRODUCT_TYPE === 'MEDICAL') item.PRODUCT_TYPE = 'IAVM'
                     else if (item.PRODUCT_TYPE === 'AA-BD4' || item.PRODUCT_TYPE === 'AUTO-BD5')
@@ -309,7 +308,6 @@ const getKpiJson = (bu) => {
                     return item
                 })
                 .filter((e) => bu.includes(e.PRODUCT_TYPE))
-            console.log(dataActualClaim)
             let targetRate, targetCost, targetCliam
             let obaRateMax = 0
             let obaCostMax = 0
@@ -332,7 +330,6 @@ const getKpiJson = (bu) => {
 
                     targetRate = Number(dataThisMonth.TARGET.replace('%', ''))
                 } else if (index === 1) {
-                    console.log(bu, dataCost)
                     /* 資料依YM排序 */
                     dataCost.sort((a, b) => {
                         const monthA = Number(a.YM.slice(-2))
@@ -347,7 +344,6 @@ const getKpiJson = (bu) => {
                     const dayThismonth = new Date(yearCurrent, month + 1, 0).getDate()
                     const dateToday = today.getDate()
                     const rate = dateToday / dayThismonth
-                    console.log(dataThisMonth.SORTING_FEE, rate)
                     valueAcutal = Math.floor((dataThisMonth.SORTING_FEE * rate) / 10000) / 100 + 'M/月'
                     valueTarget = Math.floor(dataThisMonth.TARGET / 10000) / 100 + 'M/月'
                     imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
@@ -371,7 +367,6 @@ const getKpiJson = (bu) => {
                     /* Actual Claim */
                     let valueActualClaim = dataActualClaim.map((e) => e.AMOUNT)
                     valueActualClaim = valueActualClaim.length > 0 ? valueActualClaim.reduce((a, b) => a + b) : 0
-                    console.log(valueActualClaim)
                     valueAcutal = Math.floor(valueActualClaim / 10000) / 100 + 'M/月'
                     valueTarget = dataThisMonth.TARGET + 'M/月'
                     imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
@@ -446,7 +441,6 @@ const getKpiJson = (bu) => {
                     obj.gt = -1
                 } else if (type === 2) {
                     /* 資料不足6個月 補0*/
-                    console.log(dataClaim)
                     dataClaim.forEach((e) => {
                         if (customerClaimMax < Number(e.TARGET) * 1.5) {
                             customerClaimMax = Number(e.TARGET) * 1.5
@@ -642,7 +636,6 @@ const getSankeyData = (bu) => {
                 }
             })
 
-            console.log(bu, obj)
             paintChartSankey(chartSankey, obj)
         }
     )
