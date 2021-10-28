@@ -313,7 +313,6 @@ const getKpiJson = (bu) => {
 
                 targetRate = Number(dataThisMonth.TARGET.replace('%', ''))
             } else if (index === 1) {
-                console.log(bu, dataCost)
                 /* 資料依YM排序 */
                 dataCost.sort((a, b) => {
                     const monthA = Number(a.YM.slice(-2))
@@ -328,7 +327,6 @@ const getKpiJson = (bu) => {
                 const dayThismonth = new Date(yearCurrent, month + 1, 0).getDate()
                 const dateToday = today.getDate()
                 const rate = dateToday / dayThismonth
-                console.log(dataThisMonth.SORTING_FEE, rate)
                 valueAcutal = Math.floor((dataThisMonth.SORTING_FEE * rate) / 10000) / 100 + 'M/月'
                 valueTarget = Math.floor(dataThisMonth.TARGET / 10000) / 100 + 'M/月'
                 imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
@@ -423,7 +421,6 @@ const getKpiJson = (bu) => {
                 obj.gt = -1
             } else if (type === 2) {
                 /* 資料不足6個月 補0*/
-                console.log(dataClaim)
                 dataClaim.forEach((e) => {
                     if (customerClaimMax < Number(e.TARGET) * 1.5) {
                         customerClaimMax = Number(e.TARGET) * 1.5
@@ -541,21 +538,18 @@ const getSankeyData = (bu) => {
                         name: key,
                         itemStyle: { color: value },
                     })
-                else return ''
             } else if (i === 1) {
                 if (dataCost.length > 0)
                     obj.value.push({
                         name: key,
                         itemStyle: { color: value },
                     })
-                else return ''
             } else if (i === 2) {
                 if (dataClaim.length > 0)
                     obj.value.push({
                         name: key,
                         itemStyle: { color: value },
                     })
-                else return ''
             }
         }
         // right target
