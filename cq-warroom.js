@@ -2,13 +2,12 @@
 const hostName = 'http://tw071273p/cq-warroom/'
 let qs = Qs
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded'
-const jsonPath = 'http://tnvqis03/JsonServiceTest'
 
 // dom
 const navBar = document.querySelector('.navbar-nav'),
     rateValue = document.querySelector('.rate-value')
 // Value Default
-let buSelected = 'TV'
+let buSelected = 'IAVM'
 // Date
 const today = new Date()
 const yearCurrent = today.getFullYear()
@@ -20,7 +19,7 @@ for (let i = 0; i < 6; i++) {
 }
 console.log(arrSixmonth)
 // Object
-const bu = ['TV', 'CE', 'IAVM', 'MONITOR', 'MP', 'NB', 'TABLET', 'AA']
+const bu = ['IAVM', 'MONITOR', 'NB', 'TV', 'AA', 'CE', 'MP', 'TABLET']
 const greenLamp = [
     '1/2',
     '1/3',
@@ -289,7 +288,7 @@ const getKpiJson = (bu) => {
     }
     const getDataActualClaim = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonService/jsonQuery.do?dataRequestName=CRC_IN_APPR_PROC_AMT001',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=CRC_IN_APPR_PROC_AMT001',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
@@ -595,7 +594,7 @@ const getSankeyData = (bu) => {
     }
     const getDataActualClaim = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonService/jsonQuery.do?dataRequestName=CRC_IN_APPR_PROC_AMT001',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=CRC_IN_APPR_PROC_AMT001',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
