@@ -133,7 +133,6 @@ const getCustomerRankingData = (bu) => {
                     <div class="light-current circle ${checkLight(forecastCurrent.lamp)}"></div>
                 </div>
                 `
-                if (Number(forecastCurrent.month) === thisMonth) isNew = true
             }
 
             tbody.innerHTML += `
