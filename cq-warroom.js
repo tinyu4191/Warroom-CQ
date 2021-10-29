@@ -2,6 +2,7 @@
 const hostName = 'http://tw071273p/cq-warroom/'
 let qs = Qs
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded'
+const jsonPath = 'http://tnvqis03/JsonServiceTest'
 
 // dom
 const navBar = document.querySelector('.navbar-nav'),
@@ -149,51 +150,57 @@ const getCustomerRankingData = (bu) => {
     })
 }
 
-const getAnnualKpiData = (bu) => {
-    axios.post(hostName + 'warroom_annual_metrics.php', qs.stringify({ Bu: bu })).then((res) => {
-        const data = res.data[0]
-        // dom
-        const chartOba = document.querySelector('.chart-oba'),
-            chartcaerb = document.querySelector('.chart-caerb')
+const getAnnualKpiData = (bu, data) => {
+    // dom
+    const chartOba = document.querySelector('.chart-oba'),
+        chartcaerb = document.querySelector('.chart-caerb')
+    if (!data)
+        axios.post(hostName + 'warroom_annual_metrics.php', qs.stringify({ Bu: bu })).then((res) => {
+            const data = res.data[0]
 
-        // echarts OBA Cost
-        const objOba = {}
-        console.log(
-            'Target:',
-            data.OBA_Cost_Target,
-            'Last year:',
-            data.OBA_Cost_LastYear,
-            'Target > Last year',
-            data.OBA_Annual_Target > data.OBA_Cost_LastYear
-        )
-        data.OBA_Cost_LastYear =
-            data.OBA_Annual_Target > data.OBA_Cost_LastYear ? data.OBA_Annual_Target : data.OBA_Cost_LastYear
-        const maxAnnual = (Number(data.OBA_Cost_LastYear) / 80) * 100
-        objOba.value = Math.floor((Number(data.OBA_Annual_Cost) / maxAnnual) * 100)
-        objOba.name = Math.floor((Number(data.OBA_Annual_Cost) / Number(data.OBA_Annual_Target)) * 10000) / 100
-        objOba.axis = Math.floor((Number(data.OBA_Annual_Target) / maxAnnual) * 10) / 10
-        // echarts CAERB
-        const objCaerb = {}
-        const maxCaerb = (Number(data.CAERB_LastYear) / 80) * 100
-        objCaerb.value = Math.floor((Number(data.CAERB_total) / maxCaerb) * 100)
-        objCaerb.name = Math.floor((Number(data.CAERB_total) / Number(data.CAERB_target)) * 10000) / 100
-        objCaerb.axis = Math.floor((Number(data.CAERB_target) / maxCaerb) * 10) / 10
+            // echarts OBA Cost
+            const objOba = {}
+            console.log(
+                'Target:',
+                data.OBA_Cost_Target,
+                'Last year:',
+                data.OBA_Cost_LastYear,
+                'Target > Last year',
+                data.OBA_Annual_Target > data.OBA_Cost_LastYear
+            )
+            data.OBA_Cost_LastYear =
+                data.OBA_Annual_Target > data.OBA_Cost_LastYear ? data.OBA_Annual_Target : data.OBA_Cost_LastYear
+            const maxAnnual = (Number(data.OBA_Cost_LastYear) / 80) * 100
+            objOba.value = Math.floor((Number(data.OBA_Annual_Cost) / maxAnnual) * 100)
+            objOba.name = Math.floor((Number(data.OBA_Annual_Cost) / Number(data.OBA_Annual_Target)) * 10000) / 100
+            objOba.axis = Math.floor((Number(data.OBA_Annual_Target) / maxAnnual) * 10) / 10
+            // echarts CAERB
+            const objCaerb = {}
+            const maxCaerb = (Number(data.CAERB_LastYear) / 80) * 100
+            objCaerb.value = Math.floor((Number(data.CAERB_total) / maxCaerb) * 100)
+            objCaerb.name = Math.floor((Number(data.CAERB_total) / Number(data.CAERB_target)) * 10000) / 100
+            objCaerb.axis = Math.floor((Number(data.CAERB_target) / maxCaerb) * 10) / 10
 
-        paintChartsGauge(chartOba, objOba)
-        paintChartsGauge(chartcaerb, objCaerb)
-    })
+            paintChartsGauge(chartOba, objOba)
+            paintChartsGauge(chartcaerb, objCaerb)
+        })
 }
 
 const getAnnualOBACost = (bu) => {
     $.ajax({
-        url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost001',
+        url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost001',
         dataType: 'jsonp',
         jsonp: 'jsonpCallback',
     }).then((res) => {
         if (bu === 'AA') bu = 'BD'
         const data = res.filter((e) => e.APPLICATION.includes(bu))
+        const obj = {}
         let valueCost = checkValue(data.map((e) => e.SORTING_FEE))
         let valueTarget = checkValue(data.map((e) => e.TARGET))
+        /* chart data */
+        obj.target = valueTarget
+        obj.valueCostCurrent = valueCost
+        obj.valueLastYear = checkValue(data.map((e) => e.LAST_YEAR_FEE))
         valueCost = Math.floor(valueCost / 10000) / 100
         valueTarget = Math.floor(valueTarget / 10000) / 100
         const valueObaAnnualActual = document.querySelector('.value-oba-annual-actual'),
@@ -205,12 +212,24 @@ const getAnnualOBACost = (bu) => {
         }
         valueObaAnnualActual.innerHTML = `${valueCost}M`
         valueObaAnnualTarget.innerHTML = `${valueTarget}M`
+
+        let { target, valueCostCurrent, valueLastYear } = obj
+        valueLastYear = target > valueLastYear ? target : valueLastYear
+        const maxAnnual = (Number(valueLastYear) / 80) * 100
+
+        obj.value = Math.floor((Number(valueCostCurrent) / maxAnnual) * 100)
+        obj.name = Math.floor((Number(valueCostCurrent) / Number(target)) * 10000) / 100
+        obj.axis = Math.floor((Number(target) / maxAnnual) * 10) / 10
+
+        // 儀表圖
+        const chartOba = document.querySelector('.chart-oba')
+        paintChartsGauge(chartOba, obj)
     })
 }
 
 const getAnnualCAERB = (bu) => {
     $.ajax({
-        url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-CAERB001',
+        url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-CAERB001',
         dataType: 'jsonp',
         jsonp: 'jsonpCallback',
     }).then((res) => {
@@ -219,6 +238,11 @@ const getAnnualCAERB = (bu) => {
         let valueOpen = checkValue(data.filter((e) => e.STSTUS === 'OPEN').map((e) => e.CAERB_COUNT))
         let valueClose = checkValue(data.filter((e) => e.STSTUS === 'CLOSE').map((e) => e.CAERB_COUNT))
         let valueTarget = checkValue(data.filter((e) => e.STSTUS === 'TARGET').map((e) => e.CAERB_COUNT))
+        /* chart data */
+        const obj = {}
+        obj.target = valueTarget
+        obj.total = valueOpen + valueClose
+        obj.lastYear = checkValue(data.filter((e) => e.STSTUS === 'last_year').map((e) => e.CAERB_COUNT))
         const valueCaerbOpenClose = document.querySelector('.value-caerb-open-close'),
             valueCaerbTaget = document.querySelector('.value-caerb-target')
 
@@ -229,27 +253,36 @@ const getAnnualCAERB = (bu) => {
         }
         valueCaerbOpenClose.innerHTML = `${valueOpen}/${valueClose}`
         valueCaerbTaget.innerHTML = valueTarget
+
+        const { target, total, lastYear } = obj
+        const maxCaerb = (Number(lastYear) / 80) * 100
+        obj.value = Math.floor((Number(total) / maxCaerb) * 100)
+        obj.name = Math.floor((Number(total) / Number(target)) * 10000) / 100
+        obj.axis = Math.floor((Number(target) / maxCaerb) * 10) / 10
+        // 儀表圖
+        const chartcaerb = document.querySelector('.chart-caerb')
+        paintChartsGauge(chartcaerb, obj)
     })
 }
 
 const getKpiJson = (bu) => {
     const getDataOBACost = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost002',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost002',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
     }
     const getDataOBARate = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Rate001',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Rate001',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
     }
     const getDataCustomerClaim = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-Customer_Claim001',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-Customer_Claim001',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
@@ -261,6 +294,7 @@ const getKpiJson = (bu) => {
             jsonp: 'jsonpCallback',
         })
     }
+    const getDataCustomerClaimMonthly = () => {}
 
     /* 燈號邏輯 */
     const pictureLight = (past, current, type) => {
@@ -350,11 +384,11 @@ const getKpiJson = (bu) => {
                     })
                     const [dataLastMonth, dataThisMonth] = dataCost.slice(-2)
 
-                    /* Cost計算 value * (這個月已過天數 / 這個月天數) */
+                    /* Cost計算 value * / 這個月已過天數 * 這個月天數 */
                     const month = today.getMonth()
                     const dayThismonth = new Date(yearCurrent, month + 1, 0).getDate()
                     const dateToday = today.getDate()
-                    const rate = dateToday / dayThismonth
+                    const rate = dayThismonth / dateToday
                     valueAcutal = Math.floor((dataThisMonth.SORTING_FEE * rate) / 10000) / 100 + 'M/月'
                     valueTarget = Math.floor(dataThisMonth.TARGET / 10000) / 100 + 'M/月'
                     imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
@@ -404,8 +438,6 @@ const getKpiJson = (bu) => {
                 if (type === 0) {
                     /* Rate： AA 只取 AA-BD4 */
                     if (bu.includes('AA-BD4')) dataRate = dataRate.filter((e) => e.APPLICATION === 'AA-BD4')
-                    /* 只抓近六個月 */
-                    if (dataRate.length > 6) dataRate.shift()
                     dataRate.forEach((e) => {
                         if (obaRateMax < Number(e.TARGET.replace('%', '')) * 1.5) {
                             obaRateMax = Number(e.TARGET.replace('%', '')) * 1.5
@@ -416,6 +448,21 @@ const getKpiJson = (bu) => {
                     })
                     obj.name = 'Sorting Rate'
                     obj.xAxis = arrSixmonth
+
+                    let arr = []
+                    arrSixmonth.forEach((month) => {
+                        let item = dataRate.filter((e) => Number(e.YM.slice(-2)) === month)[0]
+                        if (item === undefined)
+                            item = {
+                                YM: `${String(yearCurrent).slice(-2)}${
+                                    monthCurrent < 10 ? 0 + monthCurrent : monthCurrent
+                                }`,
+                                SORT_RATE: '0%',
+                            }
+                        arr.push(item)
+                    })
+                    dataRate = arr
+
                     obj.value = dataRate.map((e) => Number(e.SORT_RATE.replace('%', '')))
                     obj.target = targetRate
                     obj.max = obaRateMax
@@ -452,13 +499,25 @@ const getKpiJson = (bu) => {
                     })
                     obj.name = 'Sorting Cost'
                     obj.xAxis = arrSixmonth
+                    let arr = []
+                    arrSixmonth.forEach((month) => {
+                        let item = dataCost.filter((e) => Number(e.YM.slice(-2)) === month)[0]
+                        if (item === undefined)
+                            item = {
+                                YM: `${String(yearCurrent).slice(-2)}${
+                                    monthCurrent < 10 ? 0 + monthCurrent : monthCurrent
+                                }`,
+                                SORTING_FEE: 0,
+                            }
+                        arr.push(item)
+                    })
+                    dataCost = arr
                     obj.value = dataCost.map((e) => Math.floor(e.SORTING_FEE / 10000) / 100)
                     obj.target = targetCost
                     obj.max = Math.floor(obaCostMax / 10000) / 100
                     obj.gt = -1
                 } else if (type === 2) {
                     /* 資料不足6個月 補0*/
-                    console.log(dataClaim)
                     dataClaim.forEach((e) => {
                         if (customerClaimMax < Number(e.TARGET) * 1.5) {
                             customerClaimMax = Number(e.TARGET) * 1.5
@@ -480,8 +539,8 @@ const getKpiJson = (bu) => {
                         obj.max = customerClaimMax
                         obj.gt = -1
                     }
-                    paintChartLine(chartDom, obj)
                 }
+                paintChartLine(chartDom, obj)
             }
             const titleIndex = ['OBA Sorting Rate', '當月預估 OBA Sorting Cost', 'Customer Claim']
 
@@ -515,21 +574,21 @@ const getKpiJson = (bu) => {
 const getSankeyData = (bu) => {
     const getDataOBACost = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost003',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost003',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
     }
     const getDataOBARate = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Rate002',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Rate002',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
     }
     const getDataCustomerClaim = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-Customer_Claim002',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-Customer_Claim002',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
@@ -586,34 +645,42 @@ const getSankeyData = (bu) => {
                 let key = Object.keys(kpiColor)[i]
                 let value = Object.values(kpiColor)[i]
                 if (i === 0) {
-                    if (dataRate.length > 0)
-                        obj.value.push({
-                            name: key,
-                            itemStyle: { color: value },
-                        })
+                    obj.value.push({
+                        name: key,
+                        itemStyle: { color: value },
+                    })
                 } else if (i === 1) {
-                    if (dataCost.length > 0)
-                        obj.value.push({
-                            name: key,
-                            itemStyle: { color: value },
-                        })
+                    obj.value.push({
+                        name: key,
+                        itemStyle: { color: value },
+                    })
                 } else if (i === 2) {
-                    if (dataActualClaim.length > 0)
-                        obj.value.push({
-                            name: key,
-                            itemStyle: { color: value },
-                        })
+                    obj.value.push({
+                        name: key,
+                        itemStyle: { color: value },
+                    })
                 }
             }
             // right target
             customerName.forEach((item, index) => {
                 obj.value.push({ name: item, itemStyle: { color: colorRightList[index] } })
             })
+            obj.value.push({
+                name: 'none',
+                itemStyle: { color: 'transparent', borderWidth: 0 },
+                label: { show: false },
+            })
             // links
             obj.links = []
             Object.keys(kpiColor).forEach((category, index) => {
                 if (index === 0) {
-                    if (dataRate.length < 1) return
+                    if (dataRate.length < 1)
+                        return obj.links.push({
+                            source: category,
+                            target: 'none',
+                            value: 0.3,
+                            lineStyle: { color: 'transparent' },
+                        })
                     const totalValue = dataRate.map((e) => e.INSPECTION_QTY).reduce((a, b) => a + b)
                     dataRate.forEach((item) => {
                         const value = item.INSPECTION_QTY / totalValue
@@ -625,7 +692,13 @@ const getSankeyData = (bu) => {
                         })
                     })
                 } else if (index === 1) {
-                    if (dataCost.length < 1) return
+                    if (dataCost.length < 1)
+                        return obj.links.push({
+                            source: category,
+                            target: 'none',
+                            value: 0.3,
+                            lineStyle: { color: 'transparent' },
+                        })
                     const totalValue = dataCost.map((e) => e.SORTING_FEE).reduce((a, b) => a + b)
                     dataCost.forEach((item) => {
                         const value = item.SORTING_FEE / totalValue
@@ -637,7 +710,13 @@ const getSankeyData = (bu) => {
                         })
                     })
                 } else if (index === 2) {
-                    if (dataActualClaim.length < 1) return
+                    if (dataActualClaim.length < 1)
+                        return obj.links.push({
+                            source: category,
+                            target: 'none',
+                            value: 0.3,
+                            lineStyle: { color: 'transparent' },
+                        })
                     const totalValue = dataActualClaim.map((e) => e.AMOUNT).reduce((a, b) => a + b)
                     dataActualClaim.forEach((item) => {
                         const value = item.AMOUNT / totalValue
@@ -658,7 +737,7 @@ const getSankeyData = (bu) => {
 
 const navClick = (bu) => {
     getCustomerRankingData(bu)
-    getAnnualKpiData(bu)
+    // getAnnualKpiData(bu)
     getAnnualOBACost(bu)
     getAnnualCAERB(bu)
     getKpiJson(bu)
