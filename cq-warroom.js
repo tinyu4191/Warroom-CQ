@@ -49,8 +49,8 @@ const getCustomerRankingData = (bu) => {
             const data = dataBu.filter((e) => e.brand === item)
             const [actualCurrent] = data.filter((e) => e.TYPE === 'actural_c')
             const [actualPast] = data.filter((e) => e.TYPE === 'actural_p')
-            const [forecastPast] = data.filter((e) => e.TYPE === 'forecast_c')
-            const [forecastCurrent] = data.filter((e) => e.TYPE === 'forecast_p')
+            const [forecastPast] = data.filter((e) => e.TYPE === 'forecast_p')
+            const [forecastCurrent] = data.filter((e) => e.TYPE === 'forecast_c')
             let dateActual = new Date(`${actualCurrent.year} ${actualCurrent.month}`).getTime()
             let thisMonth = today.getMonth()
             let dateLast3Month = today.setMonth(today.getMonth() - 3)
@@ -518,6 +518,8 @@ const getKpiJson = (bu) => {
             titleIndex.forEach((item, index) => {
                 tdChart(index, index + 1)
             })
+            console.log(bu)
+            getSankeyData(bu)
         }
     )
 }
@@ -546,8 +548,6 @@ const getSankeyData = (bu) => {
     }
     $.when(getDataOBACost(), getDataOBARate(), getDataActualClaim()).then((cost, rate, actualClaim) => {
         // AA => 'AA-BD4, AUTO-BD5'
-        if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
-        else bu = [bu]
         const dataRate = rate[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
         const dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
         const dataActualClaim = actualClaim[0]
@@ -556,11 +556,10 @@ const getSankeyData = (bu) => {
 
         const chartSankey = document.querySelector('.chart-sankey')
         const kpiColor = {
-            'OBA Sorting Rate': '#70E0E0',
-            'OBA Sorting Cost': '#E0FF70',
-            'Customer Claim': '#FFA8E0',
+            'OBA Sorting Rate': '#4285f4',
+            'OBA Sorting Cost': '#fbbc05',
+            'Customer Claim': '#ea4335',
         }
-
         // customer
         const customerName = Array.from(
             new Set(
@@ -597,14 +596,14 @@ const getSankeyData = (bu) => {
                 })
             }
         }
-        // right target
-        customerName.forEach((item, index) => {
-            obj.value.push({ name: item, itemStyle: { color: colorRightList[index] } })
-        })
         obj.value.push({
             name: 'none',
             itemStyle: { color: 'transparent', borderWidth: 0 },
             label: { show: false },
+        })
+        // right target
+        customerName.forEach((item, index) => {
+            obj.value.push({ name: item, itemStyle: { color: colorRightList[index] } })
         })
         // links
         obj.links = []
@@ -614,7 +613,7 @@ const getSankeyData = (bu) => {
                     return obj.links.push({
                         source: category,
                         target: 'none',
-                        value: 0.3,
+                        value: 0.2,
                         lineStyle: { color: 'transparent' },
                     })
                 const totalValue = dataRate.map((e) => e.INSPECTION_QTY).reduce((a, b) => a + b)
@@ -665,7 +664,7 @@ const getSankeyData = (bu) => {
                 })
             }
         })
-
+        console.log(obj)
         paintChartSankey(chartSankey, obj)
     })
 }
@@ -675,7 +674,6 @@ const navClick = (bu) => {
     getAnnualOBACost(bu)
     getAnnualCAERB(bu)
     getKpiJson(bu)
-    getSankeyData(bu)
 }
 
 function calculateRate() {
@@ -793,16 +791,16 @@ const paintChartLine = (dom, data) => {
             right: -100,
             pieces: [
                 {
-                    gt: data.gt,
-                    lte: data.target,
+                    min: data.gt,
+                    max: data.target * 1.05,
                     color: '#008000',
                 },
                 {
-                    gt: data.target,
-                    lte: data.max,
+                    min: data.target * 1.05,
                     color: '#e60000',
                 },
             ],
+            borderWidth: 0,
         },
         series: {
             name: data.name,
@@ -869,7 +867,7 @@ const paintChartSankey = (dom, data) => {
 const generateColor = (num) => {
     let arr = []
     let hex = () => {
-        return (Math.round(Math.random() * 127) + 127).toString(16)
+        return (Math.round(Math.random() * 60) + 127).toString(16)
     }
     for (let i = 0; i < num; i++) {
         arr.push(`#${hex()}${hex()}${hex()}`)
