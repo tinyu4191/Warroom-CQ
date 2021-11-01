@@ -126,8 +126,9 @@ const getAnnualOBACost = (bu) => {
         dataType: 'jsonp',
         jsonp: 'jsonpCallback',
     }).then((res) => {
-        if (bu === 'AA') bu = 'BD'
-        const data = res.filter((e) => e.APPLICATION.includes(bu))
+        if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
+        else bu = [bu]
+        const data = res.filter((e) => bu.includes(e.APPLICATION))
         const obj = {}
         let valueCost = checkValue(data.map((e) => e.SORTING_FEE))
         let valueTarget = checkValue(data.map((e) => e.TARGET))
