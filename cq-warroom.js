@@ -11,7 +11,7 @@ let buSelected = 'IAVM'
 // Date
 const today = new Date()
 const yearCurrent = today.getFullYear()
-const monthCurrent = today.getDate() < 5 ? today.getMonth() : today.getMonth() + 1
+const monthCurrent = today.getMonth() + 1
 console.log(monthCurrent)
 const arrSixmonth = []
 for (let i = 0; i < 6; i++) {
@@ -79,7 +79,6 @@ const getCustomerRankingData = (bu) => {
             const [forecastPast] = data.filter((e) => e.TYPE === 'forecast_c')
             const [forecastCurrent] = data.filter((e) => e.TYPE === 'forecast_p')
             let dateActual = new Date(`${actualCurrent.year} ${actualCurrent.month}`).getTime()
-            let today = new Date()
             let thisMonth = today.getMonth()
             let dateLast3Month = today.setMonth(today.getMonth() - 3)
             let pastDiv = ''
