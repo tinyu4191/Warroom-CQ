@@ -7,55 +7,33 @@ axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded
 const navBar = document.querySelector('.navbar-nav'),
     rateValue = document.querySelector('.rate-value')
 // Value Default
-let buSelected = 'TV'
+let buSelected = 'IAVM'
 // Date
 const today = new Date()
 const yearCurrent = today.getFullYear()
-const monthCurrent = today.getDate() < 5 ? today.getMonth() : today.getMonth() + 1
-console.log(monthCurrent)
+const monthCurrent = today.getMonth() + 1
+// month補0
+function styleMonth(month) {
+    return (month = month < 10 ? `0${month}` : month)
+}
+const arrSixyearmonth = []
+for (let i = 0; i < 6; i++) {
+    if (monthCurrent - i <= 0) arrSixyearmonth.unshift(`${String(yearCurrent - 1)}${styleMonht(monthCurrent + 12 - i)}`)
+    else arrSixyearmonth.unshift(`${String(yearCurrent)}${styleMonth(monthCurrent - i)}`)
+}
+const arrSixmonth = arrSixyearmonth.map((e) => Number(e.slice(-2)))
 // Object
-const bu = ['TV', 'CE', 'IAVM', 'MONITOR', 'MP', 'NB', 'TABLET', 'AA']
-const greenLamp = [
-    '1/2',
-    '1/3',
-    '1/4',
-    '1/5',
-    '1/6',
-    '1/7',
-    '1/8',
-    '2/4',
-    '2/5',
-    '2/6',
-    '2/7',
-    '2/8',
-    '3/7',
-    '3/8',
-    'A',
-    'G',
-    '1/9',
-    '2/9',
-    '3/9',
-]
-const yellowLamp = ['2/3', '3/4', '3/5', '3/6', '3/10', '4/6', '4/7', '4/8', '5/8', 'B', 'Y', '4/9', '5/9', '6/9']
-const redLamp = [
-    '3/3',
-    '4/4',
-    '4/5',
-    '5/5',
-    '5/6',
-    '5/7',
-    '6/6',
-    '6/7',
-    '6/8',
-    '7/7',
-    '7/8',
-    '8/8',
-    'C',
-    'R',
-    '7/9',
-    '8/9',
-    '9/9',
-]
+const bu = ['IAVM', 'MONITOR', 'NB', 'TV', 'AA', 'CE', 'MP', 'TABLET']
+
+// PRODUCT_TYPE Rule
+const productTypeRule = (item) => {
+    if (item.PRODUCT_TYPE === 'OPEN_CELL_TV' || item.PRODUCT_TYPE === 'SET_TV') item.PRODUCT_TYPE = 'TV'
+    else if (item.PRODUCT_TYPE === 'IAV' || item.PRODUCT_TYPE === 'MEDICAL' || item.PRODUCT_TYPE === 'OPEN_CELL_XRAY')
+        item.PRODUCT_TYPE = 'IAVM'
+    else if (item.PRODUCT_TYPE === 'OPEN_CELL_MONITOR') item.PRODUCT_TYPE = 'MONITOR'
+    else if (item.PRODUCT_TYPE === 'AA-BD4' || item.PRODUCT_TYPE === 'AUTO-BD5') item.PRODUCT_TYPE = 'AA'
+    return item
+}
 
 // get json
 const getCustomerRankingData = (bu) => {
@@ -71,10 +49,9 @@ const getCustomerRankingData = (bu) => {
             const data = dataBu.filter((e) => e.brand === item)
             const [actualCurrent] = data.filter((e) => e.TYPE === 'actural_c')
             const [actualPast] = data.filter((e) => e.TYPE === 'actural_p')
-            const [forecastPast] = data.filter((e) => e.TYPE === 'forecast_c')
-            const [forecastCurrent] = data.filter((e) => e.TYPE === 'forecast_p')
+            const [forecastPast] = data.filter((e) => e.TYPE === 'forecast_p')
+            const [forecastCurrent] = data.filter((e) => e.TYPE === 'forecast_c')
             let dateActual = new Date(`${actualCurrent.year} ${actualCurrent.month}`).getTime()
-            let today = new Date()
             let thisMonth = today.getMonth()
             let dateLast3Month = today.setMonth(today.getMonth() - 3)
             let pastDiv = ''
@@ -101,7 +78,7 @@ const getCustomerRankingData = (bu) => {
             /* Actual Current日期距離現在時間超過3個月 */
             /* True: Past: Actual_Past , Current: Actual_Current */
             /* False: Past: Actual_Current , Current: Forecast_Current */
-            if (dateActual >= dateLast3Month) {
+            if (dateActual <= dateLast3Month) {
                 pastDiv = `
                 <div>
                     <span>${regex.test(actualPast.rank) ? '' : actualPast.rank}</span>
@@ -128,7 +105,6 @@ const getCustomerRankingData = (bu) => {
                     <div class="light-current circle ${checkLight(forecastCurrent.lamp)}"></div>
                 </div>
                 `
-                if (Number(forecastCurrent.month) === thisMonth) isNew = true
             }
 
             tbody.innerHTML += `
@@ -144,51 +120,22 @@ const getCustomerRankingData = (bu) => {
     })
 }
 
-const getAnnualKpiData = (bu) => {
-    axios.post(hostName + 'warroom_annual_metrics.php', qs.stringify({ Bu: bu })).then((res) => {
-        const data = res.data[0]
-        // dom
-        const chartOba = document.querySelector('.chart-oba'),
-            chartcaerb = document.querySelector('.chart-caerb')
-
-        // echarts OBA Cost
-        const objOba = {}
-        console.log(
-            'Target:',
-            data.OBA_Cost_Target,
-            'Last year:',
-            data.OBA_Cost_LastYear,
-            'Target > Last year',
-            data.OBA_Annual_Target > data.OBA_Cost_LastYear
-        )
-        data.OBA_Cost_LastYear =
-            data.OBA_Annual_Target > data.OBA_Cost_LastYear ? data.OBA_Annual_Target : data.OBA_Cost_LastYear
-        const maxAnnual = (Number(data.OBA_Cost_LastYear) / 80) * 100
-        objOba.value = Math.floor((Number(data.OBA_Annual_Cost) / maxAnnual) * 100)
-        objOba.name = Math.floor((Number(data.OBA_Annual_Cost) / Number(data.OBA_Annual_Target)) * 10000) / 100
-        objOba.axis = Math.floor((Number(data.OBA_Annual_Target) / maxAnnual) * 10) / 10
-        // echarts CAERB
-        const objCaerb = {}
-        const maxCaerb = (Number(data.CAERB_LastYear) / 80) * 100
-        objCaerb.value = Math.floor((Number(data.CAERB_total) / maxCaerb) * 100)
-        objCaerb.name = Math.floor((Number(data.CAERB_total) / Number(data.CAERB_target)) * 10000) / 100
-        objCaerb.axis = Math.floor((Number(data.CAERB_target) / maxCaerb) * 10) / 10
-
-        paintChartsGauge(chartOba, objOba)
-        paintChartsGauge(chartcaerb, objCaerb)
-    })
-}
-
 const getAnnualOBACost = (bu) => {
     $.ajax({
-        url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost001',
+        url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost001',
         dataType: 'jsonp',
         jsonp: 'jsonpCallback',
     }).then((res) => {
-        if (bu === 'AA') bu = 'BD'
-        const data = res.filter((e) => e.APPLICATION.includes(bu))
+        if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
+        else bu = [bu]
+        const data = res.filter((e) => bu.includes(e.APPLICATION))
+        const obj = {}
         let valueCost = checkValue(data.map((e) => e.SORTING_FEE))
         let valueTarget = checkValue(data.map((e) => e.TARGET))
+        /* chart data */
+        obj.target = valueTarget
+        obj.valueCostCurrent = valueCost
+        obj.valueLastYear = checkValue(data.map((e) => e.LAST_YEAR_FEE))
         valueCost = Math.floor(valueCost / 10000) / 100
         valueTarget = Math.floor(valueTarget / 10000) / 100
         const valueObaAnnualActual = document.querySelector('.value-oba-annual-actual'),
@@ -200,12 +147,24 @@ const getAnnualOBACost = (bu) => {
         }
         valueObaAnnualActual.innerHTML = `${valueCost}M`
         valueObaAnnualTarget.innerHTML = `${valueTarget}M`
+
+        let { target, valueCostCurrent, valueLastYear } = obj
+        valueLastYear = target > valueLastYear ? target : valueLastYear
+        const maxAnnual = (Number(valueLastYear) / 80) * 100
+
+        obj.value = Math.floor((Number(valueCostCurrent) / maxAnnual) * 100)
+        obj.name = Math.floor((Number(valueCostCurrent) / Number(target)) * 10000) / 100
+        obj.axis = Math.floor((Number(target) / maxAnnual) * 10) / 10
+
+        // 儀表圖
+        const chartOba = document.querySelector('.chart-oba')
+        paintChartsGauge(chartOba, obj)
     })
 }
 
 const getAnnualCAERB = (bu) => {
     $.ajax({
-        url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-CAERB001',
+        url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-CAERB001',
         dataType: 'jsonp',
         jsonp: 'jsonpCallback',
     }).then((res) => {
@@ -214,6 +173,11 @@ const getAnnualCAERB = (bu) => {
         let valueOpen = checkValue(data.filter((e) => e.STSTUS === 'OPEN').map((e) => e.CAERB_COUNT))
         let valueClose = checkValue(data.filter((e) => e.STSTUS === 'CLOSE').map((e) => e.CAERB_COUNT))
         let valueTarget = checkValue(data.filter((e) => e.STSTUS === 'TARGET').map((e) => e.CAERB_COUNT))
+        /* chart data */
+        const obj = {}
+        obj.target = valueTarget
+        obj.total = valueOpen + valueClose
+        obj.lastYear = checkValue(data.filter((e) => e.STSTUS === 'last_year').map((e) => e.CAERB_COUNT))
         const valueCaerbOpenClose = document.querySelector('.value-caerb-open-close'),
             valueCaerbTaget = document.querySelector('.value-caerb-target')
 
@@ -224,27 +188,43 @@ const getAnnualCAERB = (bu) => {
         }
         valueCaerbOpenClose.innerHTML = `${valueOpen}/${valueClose}`
         valueCaerbTaget.innerHTML = valueTarget
+
+        const { target, total, lastYear } = obj
+        const maxCaerb = (Number(lastYear) / 80) * 100
+        obj.value = Math.floor((Number(total) / maxCaerb) * 100)
+        obj.name = Math.floor((Number(total) / Number(target)) * 10000) / 100
+        obj.axis = Math.floor((Number(target) / maxCaerb) * 10) / 10
+        // 儀表圖
+        const chartcaerb = document.querySelector('.chart-caerb')
+        paintChartsGauge(chartcaerb, obj)
     })
 }
 
 const getKpiJson = (bu) => {
     const getDataOBACost = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost002',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost002',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
     }
     const getDataOBARate = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Rate001',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Rate001',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
     }
-    const getDataCustomerClaim = () => {
+    const getDataActualClaim = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-Customer_Claim001',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=CRC_IN_APPR_PROC_AMT001',
+            dataType: 'jsonp',
+            jsonp: 'jsonpCallback',
+        })
+    }
+    const getDataCustomerClaimMonthly = () => {
+        return $.ajax({
+            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-Customer_Claim003',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
@@ -257,7 +237,6 @@ const getKpiJson = (bu) => {
 
         if (type === 0) props = ['SORT_RATE', 'TARGET']
         else if (type === 1) props = ['SORTING_FEE', 'TARGET']
-        else if (type === 2) props = ['TOTAL_COST', 'TARGET']
         let valuePast, valueCurrent, valueTarget
         if (type === 0) {
             valuePast = Number(past[props[0]].replace('%', ''))
@@ -284,182 +263,248 @@ const getKpiJson = (bu) => {
         return str
     }
 
-    $.when(getDataOBACost(), getDataOBARate(), getDataCustomerClaim()).then((cost, rate, customerclaim) => {
-        // AA => 'AA-BD4, AUTO-BD5'
-        if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
-        else bu = [bu]
-        let dataRate = rate[0].filter((e) => bu.includes(e.APPLICATION))
-        let dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-        let dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-        let targetRate, targetCost, targetCliam
-        let obaRateMax = 0
-        let obaCostMax = 0
-        let customerClaimMax = 0
-        const tdData = (index, color) => {
-            let valueAcutal, valueTarget, imgLight
-            if (index === 0) {
-                /* 資料依YM排序 */
-                dataRate.sort((a, b) => {
-                    const monthA = Number(a.YM.slice(-2))
-                    const monthB = Number(b.YM.slice(-2))
+    $.when(getDataOBACost(), getDataOBARate(), getDataActualClaim(), getDataCustomerClaimMonthly()).then(
+        (cost, rate, actualClaim, claimMonthly) => {
+            // AA => 'AA-BD4, AUTO-BD5'
+            if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
+            else bu = [bu]
+            let dataRate = rate[0].filter((e) => bu.includes(e.APPLICATION))
+            let dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+            let dataActualClaim = actualClaim[0]
+                .map((item) => productTypeRule(item))
+                .filter((e) => bu.includes(e.PRODUCT_TYPE))
+            let dataClaimMonthly = claimMonthly[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+            /* Claim Monthly 月份補0 */
+            arrSixyearmonth.forEach((ym) => {
+                const yearMonthRate = dataRate.map((e) => e.YM)
+                const yearMonthCost = dataCost.map((e) => e.YM)
+                const yearMonthsClaimMonthly = dataClaimMonthly.map((e) => e.YEAR_MONTH.replace('-', ''))
+                if (!yearMonthRate.includes(ym))
+                    dataRate.push({
+                        APPLICATION: dataRate.map((e) => e.APPLICATION)[0],
+                        YM: ym,
+                        TARGET: dataRate.map((e) => e.TARGET)[0],
+                        SORT_RATE: '0%',
+                    })
+                if (!yearMonthCost.includes(ym))
+                    dataCost.push({
+                        PRODUCT_TYPE: dataCost.map((e) => e.PRODUCT_TYPE)[0],
+                        YM: ym,
+                        TARGET: dataCost.map((e) => e.TARGET)[0],
+                        SORTING_FEE: 0,
+                    })
+                if (!yearMonthsClaimMonthly.includes(ym))
+                    dataClaimMonthly.push({
+                        PRODUCT_TYPE: dataClaimMonthly.map((e) => e.PRODUCT_TYPE)[0],
+                        YEAR_MONTH: ym,
+                        AMOUNT: 0,
+                        TYPE: 'CRC',
+                    })
+            })
+            let targetRate, targetCost, targetCliam
+            let obaRateMax = 0
+            let obaCostMax = 0
+            let customerClaimMax = 0
+            const tdData = (index, color) => {
+                let valueAcutal, valueTarget, imgLight
+                if (index === 0) {
+                    /* 資料依YM排序 */
+                    dataRate.sort((a, b) => {
+                        const monthA = Number(a.YM.slice(-2))
+                        const monthB = Number(b.YM.slice(-2))
 
-                    return monthA - monthB
-                })
-                const [dataLastMonth, dataThisMonth] = dataRate.slice(-2)
+                        return monthA - monthB
+                    })
+                    console.log(dataRate)
+                    const [dataLastMonth, dataThisMonth] = dataRate.slice(-2)
 
-                valueAcutal = dataThisMonth.SORT_RATE + '/月'
-                valueTarget = dataThisMonth.TARGET + '/月'
-                imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
+                    valueAcutal = dataThisMonth.SORT_RATE + '/月'
+                    valueTarget = dataThisMonth.TARGET + '/月'
+                    imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
 
-                targetRate = Number(dataThisMonth.TARGET.replace('%', ''))
-            } else if (index === 1) {
-                /* 資料依YM排序 */
-                dataCost.sort((a, b) => {
-                    const monthA = Number(a.YM.slice(-2))
-                    const monthB = Number(b.YM.slice(-2))
+                    targetRate = Number(dataThisMonth.TARGET.replace('%', ''))
+                } else if (index === 1) {
+                    /* 資料依YM排序 */
+                    dataCost.sort((a, b) => {
+                        const monthA = Number(a.YM.slice(-2))
+                        const monthB = Number(b.YM.slice(-2))
 
-                    return monthA - monthB
-                })
-                const [dataLastMonth, dataThisMonth] = dataCost.slice(-2)
+                        return monthA - monthB
+                    })
+                    console.log(dataCost)
+                    const [dataLastMonth, dataThisMonth] = dataCost.slice(-2)
 
-                /* Cost計算 value * (這個月已過天數 / 這個月天數) */
-                const month = today.getMonth()
-                const dayThismonth = new Date(yearCurrent, month + 1, 0).getDate()
-                const dateToday = today.getDate()
-                const rate = dateToday / dayThismonth
-                valueAcutal = Math.floor((dataThisMonth.SORTING_FEE * rate) / 10000) / 100 + 'M/月'
-                valueTarget = Math.floor(dataThisMonth.TARGET / 10000) / 100 + 'M/月'
-                imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
+                    /* Cost計算 value * / 這個月已過天數 * 這個月天數 */
+                    const month = today.getMonth()
+                    const dayThismonth = new Date(yearCurrent, month + 1, 0).getDate()
+                    const dateToday = today.getDate()
+                    const rate = dayThismonth / dateToday
+                    valueAcutal = Math.floor((dataThisMonth.SORTING_FEE * rate) / 10000) / 100 + 'M/月'
+                    valueTarget = Math.floor(dataThisMonth.TARGET / 10000) / 100 + 'M/月'
+                    imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
 
-                targetCost = Math.floor(dataThisMonth.TARGET / 10000) / 100
-            } else if (index === 2) {
-                /* 資料依YM排序 */
-                dataClaim.sort((a, b) => {
-                    const monthA = Number(a.YM.slice(-2))
-                    const monthB = Number(b.YM.slice(-2))
+                    targetCost = Math.floor(dataThisMonth.TARGET / 10000) / 100
+                } else if (index === 2) {
+                    /* Claim Monthly */
+                    const [targetClaim] = dataClaimMonthly.filter((e) => e.TYPE === 'TARGET')
+                    const valueClaim = dataClaimMonthly.filter((e) => e.TYPE === 'CRC')
+                    const [dataLastMonth, dataThisMonth] = dataClaimMonthly.slice(-2)
 
-                    return monthA - monthB
-                })
-                if (dataClaim.length < 2) {
-                    dataClaim = new Array(2 - dataClaim.length)
-                        .fill({ TOTAL_COST: 0, TARGET: 0, YM: '0000' })
-                        .concat(dataClaim)
+                    /* Actual Claim */
+                    let valueActualClaim = dataActualClaim.map((e) => e.AMOUNT)
+                    valueActualClaim = valueActualClaim.length > 0 ? valueActualClaim.reduce((a, b) => a + b) : 0
+                    valueAcutal = Math.floor(valueActualClaim / 10000) / 100 + 'M/月'
+                    valueTarget = targetClaim.AMOUNT + 'M/月'
+                    imgLight = (() => {
+                        let str = ''
+                        const valueCurrent = Number(valueAcutal.replace('M/月', ''))
+                        const valuePast = Math.floor(dataLastMonth.AMOUNT / 10000) / 100
+                        /* [達標/不達標] 這個月跟上個月比 */
+                        str = valueCurrent <= targetClaim.AMOUNT ? '達標' : '不達標'
+
+                        /* [好/持平/爛] 這個月跟Target比 */
+                        if (valueCurrent < valuePast) {
+                            str += '好'
+                        } else if (valueCurrent === valuePast) {
+                            str += '持平'
+                        } else if (valueCurrent > valuePast) {
+                            str += '爛'
+                        }
+
+                        return str
+                    })()
+
+                    targetCliam = Number(targetClaim.AMOUNT)
                 }
-                const [dataLastMonth, dataThisMonth] = dataClaim.slice(-2)
-
-                valueAcutal = (dataThisMonth.TOTAL_COST === null ? 0 : dataThisMonth.TOTAL_COST) + 'M/月'
-                valueTarget = dataThisMonth.TARGET + 'M/月'
-                imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
-
-                targetCliam = Number(dataThisMonth.TARGET)
-            }
-            let tdContent = `
+                let tdContent = `
             <td style="background-color:${color};">${valueAcutal}</td>
             <td style="background-color:${color};">${valueTarget}</td>
             <td style="background-color:${color};"><img src="./images/${imgLight}.png" alt="燈號"/></td>
             `
-            return tdContent
-        }
-
-        const tdChart = (type, index) => {
-            const chartDom = document.querySelector(`.chart-line-${index}`)
-            const obj = {}
-            if (type === 0) {
-                /* Rate： AA 只取 AA-BD4 */
-                if (bu.includes('AA-BD4')) dataRate = dataRate.filter((e) => e.APPLICATION === 'AA-BD4')
-                /* 只抓近六個月 */
-                if (dataRate.length > 6) dataRate.shift()
-                dataRate.forEach((e) => {
-                    if (obaRateMax < Number(e.TARGET.replace('%', '')) * 1.5) {
-                        obaRateMax = Number(e.TARGET.replace('%', '')) * 1.5
-                    }
-                    if (obaRateMax < Number(e.SORT_RATE.replace('%', ''))) {
-                        obaRateMax = Number(e.SORT_RATE.replace('%', '')) * 1.05
-                    }
-                })
-                obj.name = 'Sorting Rate'
-                obj.xAxis = dataRate.map((e) => Number(e.YM.slice(-2)))
-                obj.value = dataRate.map((e) => Number(e.SORT_RATE.replace('%', '')))
-                obj.target = targetRate
-                obj.max = obaRateMax
-                obj.gt = -0.01
-            } else if (type === 1) {
-                /* AA */
-                if (bu.length > 1)
-                    dataCost = (() => {
-                        const ym = Array.from(new Set(dataCost.map((e) => e.YM)))
-                        const arr = []
-                        ym.forEach((month) => {
-                            arr.push({
-                                SORTING_FEE: dataCost
-                                    .filter((e) => e.YM === month)
-                                    .map((e) => e.SORTING_FEE)
-                                    .reduce((a, b) => a + b),
-                                TARGET: dataCost
-                                    .filter((e) => e.YM === month)
-                                    .map((e) => e.TARGET)
-                                    .reduce((a, b) => a + b),
-                                PRODUCT_TYPE: 'AA',
-                                YM: month,
-                            })
-                        })
-                        return arr
-                    })()
-                dataCost.forEach((e) => {
-                    if (obaCostMax < e.TARGET * 1.5) {
-                        obaCostMax = e.TARGET * 1.5
-                    }
-                    if (obaCostMax < e.SORTING_FEE) {
-                        obaCostMax = e.SORTING_FEE * 1.05
-                    }
-                })
-                obj.name = 'Sorting Cost'
-                obj.xAxis = dataCost.map((e) => Number(e.YM.slice(-2)))
-                obj.value = dataCost.map((e) => Math.floor(e.SORTING_FEE / 10000) / 100)
-                obj.target = targetCost
-                obj.max = Math.floor(obaCostMax / 10000) / 100
-                obj.gt = -1
-            } else if (type === 2) {
-                /* 資料不足6個月 補0*/
-                dataClaim.forEach((e) => {
-                    if (customerClaimMax < Number(e.TARGET) * 1.5) {
-                        customerClaimMax = Number(e.TARGET) * 1.5
-                    }
-                    if (customerClaimMax < Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST)) {
-                        customerClaimMax = Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST) * 1.05
-                    }
-                })
-                obj.name = 'Customer Claim'
-                obj.xAxis = dataClaim.map((e) => Number(e.YM.slice(-2)))
-                obj.value = dataClaim.map((e) => Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST))
-                /* 資料不足6個月 補0*/
-                if (obj.xAxis.length < 6) {
-                    let l = 6 - obj.xAxis.length
-                    const min = Math.min(...obj.xAxis)
-                    for (let i = 1; i <= l; i++) {
-                        obj.xAxis.unshift(min - i)
-                        obj.value.unshift(0)
-                    }
-                }
-                obj.target = targetCliam
-                obj.max = customerClaimMax
-                obj.gt = -1
+                return tdContent
             }
-            paintChartLine(chartDom, obj)
-        }
 
-        const titleIndex = ['OBA Sorting Rate', '當月預估 OBA Sorting Cost', 'Customer Claim']
+            const tdChart = (type, index) => {
+                const chartDom = document.querySelector(`.chart-line-${index}`)
+                const obj = {}
+                if (type === 0) {
+                    /* Rate： AA 只取 AA-BD4 */
+                    if (bu.includes('AA-BD4')) dataRate = dataRate.filter((e) => e.APPLICATION === 'AA-BD4')
+                    dataRate.forEach((e) => {
+                        if (obaRateMax < Number(e.TARGET.replace('%', '')) * 1.5) {
+                            obaRateMax = Number(e.TARGET.replace('%', '')) * 1.5
+                        }
+                        if (obaRateMax < Number(e.SORT_RATE.replace('%', ''))) {
+                            obaRateMax = Number(e.SORT_RATE.replace('%', '')) * 1.05
+                        }
+                    })
+                    obj.name = 'Sorting Rate'
+                    obj.xAxis = arrSixmonth
+                    let arr = []
+                    arrSixyearmonth.forEach((ym) => {
+                        let item = dataRate.filter((e) => e.YM === ym)[0]
+                        if (item === undefined)
+                            item = {
+                                YM: ym,
+                                SORT_RATE: '0%',
+                            }
+                        arr.push(item)
+                    })
+                    dataRate = arr
 
-        const lastDiv = (index, color) => {
-            if (index === 0) return `<td class="chart-sankey" rowspan="3" style="background-color:${color}"></td>`
-            else return ''
-        }
+                    obj.value = dataRate.map((e) => Number(e.SORT_RATE.replace('%', '')))
+                    obj.target = targetRate
+                    obj.max = obaRateMax
+                    obj.gt = -0.01
+                } else if (type === 1) {
+                    /* AA */
+                    if (bu.length > 1)
+                        dataCost = (() => {
+                            const ym = Array.from(new Set(dataCost.map((e) => e.YM)))
+                            const arr = []
+                            ym.forEach((month) => {
+                                arr.push({
+                                    SORTING_FEE: dataCost
+                                        .filter((e) => e.YM === month)
+                                        .map((e) => e.SORTING_FEE)
+                                        .reduce((a, b) => a + b),
+                                    TARGET: dataCost
+                                        .filter((e) => e.YM === month)
+                                        .map((e) => e.TARGET)
+                                        .reduce((a, b) => a + b),
+                                    PRODUCT_TYPE: 'AA',
+                                    YM: month,
+                                })
+                            })
+                            return arr
+                        })()
+                    dataCost.forEach((e) => {
+                        if (obaCostMax < e.TARGET * 1.5) {
+                            obaCostMax = e.TARGET * 1.5
+                        }
+                        if (obaCostMax < e.SORTING_FEE) {
+                            obaCostMax = e.SORTING_FEE * 1.05
+                        }
+                    })
+                    obj.name = 'Sorting Cost'
+                    obj.xAxis = arrSixmonth
+                    let arr = []
+                    arrSixyearmonth.forEach((ym) => {
+                        let item = dataCost.filter((e) => e.YM === ym)[0]
+                        if (item === undefined)
+                            item = {
+                                YM: ym,
+                                SORTING_FEE: 0,
+                            }
+                        arr.push(item)
+                    })
+                    dataCost = arr
+                    obj.value = dataCost.map((e) => Math.floor(e.SORTING_FEE / 10000) / 100)
+                    obj.target = targetCost
+                    obj.max = Math.floor(obaCostMax / 10000) / 100
+                    obj.gt = -1
+                } else if (type === 2) {
+                    /* 資料不足6個月 補0*/
+                    dataClaimMonthly.forEach((e) => {
+                        if (e.TYPE === 'TARGET') {
+                            customerClaimMax =
+                                customerClaimMax < Number(e.AMOUNT) * 1.5
+                                    ? (customerClaimMax = Number(e.AMOUNT) * 1.5)
+                                    : customerClaimMax
+                        } else {
+                            customerClaimMax =
+                                customerClaimMax < Number(e.AMOUNT)
+                                    ? (customerClaimMax = Number(e.AMOUNT) * 1.05)
+                                    : customerClaimMax
+                        }
+                    })
+                    obj.name = 'Customer Claim'
+                    obj.xAxis = arrSixmonth
+                    obj.value = dataClaimMonthly
+                        .filter((e) => e.TYPE === 'CRC')
+                        .slice(-6)
+                        .map((e) => Math.floor(e.AMOUNT / 10000) / 100)
+                    if (dataActualClaim.length > 0)
+                        obj.value[5] =
+                            Math.floor(dataActualClaim.map((e) => e.AMOUNT).reduce((a, b) => a + b) / 10000) / 100
+                    obj.target = targetCliam
+                    obj.max = Math.floor(customerClaimMax / 10000) / 100
+                    obj.gt = -1
+                }
+                paintChartLine(chartDom, obj)
+            }
+            const titleIndex = ['OBA Sorting Rate', '當月預估 OBA Sorting Cost', 'Customer Claim']
 
-        const trendTbody = document.querySelector('.block-trend tbody')
-        let tbodyContent = ''
-        titleIndex.forEach((item, index) => {
-            let backgrounColor = index % 2 === 0 ? '#C0DEFF' : '#DEFFC0'
-            tbodyContent += `
+            const lastDiv = (index, color) => {
+                if (index === 0) return `<td class="chart-sankey" rowspan="3" style="background-color:${color}"></td>`
+                else return ''
+            }
+
+            const trendTbody = document.querySelector('.block-trend tbody')
+            let tbodyContent = ''
+            titleIndex.forEach((item, index) => {
+                let backgrounColor = index % 2 === 0 ? '#C0DEFF' : '#DEFFC0'
+                tbodyContent += `
           <tr>
             <td style="background-color:${backgrounColor}">${item.split(' ').join('<br>')}</td>
             ${tdData(index, backgrounColor)}
@@ -467,59 +512,61 @@ const getKpiJson = (bu) => {
             ${lastDiv(index, backgrounColor)}
           </tr>
           `
-        })
+            })
 
-        trendTbody.innerHTML = tbodyContent
-        titleIndex.forEach((item, index) => {
-            tdChart(index, index + 1)
-        })
-    })
+            trendTbody.innerHTML = tbodyContent
+            titleIndex.forEach((item, index) => {
+                tdChart(index, index + 1)
+            })
+            console.log(bu)
+            getSankeyData(bu)
+        }
+    )
 }
 
 const getSankeyData = (bu) => {
     const getDataOBACost = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost003',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Cost003',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
     }
     const getDataOBARate = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Rate002',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-OBA_Rate002',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
     }
-    const getDataCustomerClaim = () => {
+    const getDataActualClaim = () => {
         return $.ajax({
-            url: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=cq-warroom-PROD-Customer_Claim002',
+            url: jsonPath + '/jsonQuery.do?dataRequestName=CRC_IN_APPR_PROC_AMT001',
             dataType: 'jsonp',
             jsonp: 'jsonpCallback',
         })
     }
-    $.when(getDataOBACost(), getDataOBARate(), getDataCustomerClaim()).then((cost, rate, customerclaim) => {
+    $.when(getDataOBACost(), getDataOBARate(), getDataActualClaim()).then((cost, rate, actualClaim) => {
         // AA => 'AA-BD4, AUTO-BD5'
-        if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
-        else bu = [bu]
         const dataRate = rate[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
         const dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-        const dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+        const dataActualClaim = actualClaim[0]
+            .map((item) => productTypeRule(item))
+            .filter((e) => bu.includes(e.PRODUCT_TYPE))
 
         const chartSankey = document.querySelector('.chart-sankey')
         const kpiColor = {
-            'OBA Sorting Rate': '#70E0E0',
-            'OBA Sorting Cost': '#E0FF70',
-            'Customer Claim': '#FFA8E0',
+            'OBA Sorting Rate': '#4285f4',
+            'OBA Sorting Cost': '#fbbc05',
+            'Customer Claim': '#ea4335',
         }
-
         // customer
         const customerName = Array.from(
             new Set(
                 [
                     dataRate.map((e) => e.CUST_GROUP),
                     dataCost.map((e) => e.CUST_GROUP),
-                    dataClaim.map((e) => e.CUSTOMER_GROUP),
+                    dataActualClaim.map((e) => e.CUST_GROUP),
                 ].flat()
             )
         ).sort()
@@ -533,25 +580,27 @@ const getSankeyData = (bu) => {
             let key = Object.keys(kpiColor)[i]
             let value = Object.values(kpiColor)[i]
             if (i === 0) {
-                if (dataRate.length > 0)
-                    obj.value.push({
-                        name: key,
-                        itemStyle: { color: value },
-                    })
+                obj.value.push({
+                    name: key,
+                    itemStyle: { color: value },
+                })
             } else if (i === 1) {
-                if (dataCost.length > 0)
-                    obj.value.push({
-                        name: key,
-                        itemStyle: { color: value },
-                    })
+                obj.value.push({
+                    name: key,
+                    itemStyle: { color: value },
+                })
             } else if (i === 2) {
-                if (dataClaim.length > 0)
-                    obj.value.push({
-                        name: key,
-                        itemStyle: { color: value },
-                    })
+                obj.value.push({
+                    name: key,
+                    itemStyle: { color: value },
+                })
             }
         }
+        obj.value.push({
+            name: 'none',
+            itemStyle: { color: 'transparent', borderWidth: 0 },
+            label: { show: false },
+        })
         // right target
         customerName.forEach((item, index) => {
             obj.value.push({ name: item, itemStyle: { color: colorRightList[index] } })
@@ -560,6 +609,13 @@ const getSankeyData = (bu) => {
         obj.links = []
         Object.keys(kpiColor).forEach((category, index) => {
             if (index === 0) {
+                if (dataRate.length < 1)
+                    return obj.links.push({
+                        source: category,
+                        target: 'none',
+                        value: 0.2,
+                        lineStyle: { color: 'transparent' },
+                    })
                 const totalValue = dataRate.map((e) => e.INSPECTION_QTY).reduce((a, b) => a + b)
                 dataRate.forEach((item) => {
                     const value = item.INSPECTION_QTY / totalValue
@@ -571,6 +627,13 @@ const getSankeyData = (bu) => {
                     })
                 })
             } else if (index === 1) {
+                if (dataCost.length < 1)
+                    return obj.links.push({
+                        source: category,
+                        target: 'none',
+                        value: 0.3,
+                        lineStyle: { color: 'transparent' },
+                    })
                 const totalValue = dataCost.map((e) => e.SORTING_FEE).reduce((a, b) => a + b)
                 dataCost.forEach((item) => {
                     const value = item.SORTING_FEE / totalValue
@@ -582,31 +645,35 @@ const getSankeyData = (bu) => {
                     })
                 })
             } else if (index === 2) {
-                // const totalValue = dataClaim.map((e) => e.INSPECTION_QTY).reduce((a, b) => a + b)
-                const totalValue = dataClaim.map((e) => e.TOTAL_COST).length
-                dataClaim.forEach((item) => {
-                    const value = 1 / totalValue
+                if (dataActualClaim.length < 1)
+                    return obj.links.push({
+                        source: category,
+                        target: 'none',
+                        value: 0.3,
+                        lineStyle: { color: 'transparent' },
+                    })
+                const totalValue = dataActualClaim.map((e) => e.AMOUNT).reduce((a, b) => a + b)
+                dataActualClaim.forEach((item) => {
+                    const value = item.AMOUNT / totalValue
                     obj.links.push({
                         source: category,
-                        target: item.CUSTOMER_GROUP,
+                        target: item.CUST_GROUP,
                         value: value,
                         lineStyle: { color: 'gradient' },
                     })
                 })
             }
         })
-
+        console.log(obj)
         paintChartSankey(chartSankey, obj)
     })
 }
 
 const navClick = (bu) => {
     getCustomerRankingData(bu)
-    getAnnualKpiData(bu)
     getAnnualOBACost(bu)
     getAnnualCAERB(bu)
     getKpiJson(bu)
-    getSankeyData(bu)
 }
 
 function calculateRate() {
@@ -724,16 +791,16 @@ const paintChartLine = (dom, data) => {
             right: -100,
             pieces: [
                 {
-                    gt: data.gt,
-                    lte: data.target,
+                    min: data.gt,
+                    max: data.target * 1.05,
                     color: '#008000',
                 },
                 {
-                    gt: data.target,
-                    lte: data.max,
+                    min: data.target * 1.05,
                     color: '#e60000',
                 },
             ],
+            borderWidth: 0,
         },
         series: {
             name: data.name,
@@ -800,7 +867,7 @@ const paintChartSankey = (dom, data) => {
 const generateColor = (num) => {
     let arr = []
     let hex = () => {
-        return (Math.round(Math.random() * 127) + 127).toString(16)
+        return (Math.round(Math.random() * 60) + 127).toString(16)
     }
     for (let i = 0; i < num; i++) {
         arr.push(`#${hex()}${hex()}${hex()}`)

@@ -109,7 +109,7 @@ header {
 }
 .container .row .block-content .rate-box {
   width: 140px;
-  padding: 5px;
+  padding: 0 5px;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
