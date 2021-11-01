@@ -12,55 +12,28 @@ let buSelected = 'IAVM'
 const today = new Date()
 const yearCurrent = today.getFullYear()
 const monthCurrent = today.getMonth() + 1
-console.log(monthCurrent)
-const arrSixmonth = []
-for (let i = 0; i < 6; i++) {
-    arrSixmonth.unshift(monthCurrent - i)
+// month補0
+function styleMonth(month) {
+    return (month = month < 10 ? `0${month}` : month)
 }
-console.log(arrSixmonth)
+const arrSixyearmonth = []
+for (let i = 0; i < 6; i++) {
+    if (monthCurrent - i <= 0) arrSixyearmonth.unshift(`${String(yearCurrent - 1)}${styleMonht(monthCurrent + 12 - i)}`)
+    else arrSixyearmonth.unshift(`${String(yearCurrent)}${styleMonth(monthCurrent - i)}`)
+}
+const arrSixmonth = arrSixyearmonth.map((e) => Number(e.slice(-2)))
 // Object
 const bu = ['IAVM', 'MONITOR', 'NB', 'TV', 'AA', 'CE', 'MP', 'TABLET']
-const greenLamp = [
-    '1/2',
-    '1/3',
-    '1/4',
-    '1/5',
-    '1/6',
-    '1/7',
-    '1/8',
-    '2/4',
-    '2/5',
-    '2/6',
-    '2/7',
-    '2/8',
-    '3/7',
-    '3/8',
-    'A',
-    'G',
-    '1/9',
-    '2/9',
-    '3/9',
-]
-const yellowLamp = ['2/3', '3/4', '3/5', '3/6', '3/10', '4/6', '4/7', '4/8', '5/8', 'B', 'Y', '4/9', '5/9', '6/9']
-const redLamp = [
-    '3/3',
-    '4/4',
-    '4/5',
-    '5/5',
-    '5/6',
-    '5/7',
-    '6/6',
-    '6/7',
-    '6/8',
-    '7/7',
-    '7/8',
-    '8/8',
-    'C',
-    'R',
-    '7/9',
-    '8/9',
-    '9/9',
-]
+
+// PRODUCT_TYPE Rule
+const productTypeRule = (item) => {
+    if (item.PRODUCT_TYPE === 'OPEN_CELL_TV' || item.PRODUCT_TYPE === 'SET_TV') item.PRODUCT_TYPE = 'TV'
+    else if (item.PRODUCT_TYPE === 'IAV' || item.PRODUCT_TYPE === 'MEDICAL' || item.PRODUCT_TYPE === 'OPEN_CELL_XRAY')
+        item.PRODUCT_TYPE = 'IAVM'
+    else if (item.PRODUCT_TYPE === 'OPEN_CELL_MONITOR') item.PRODUCT_TYPE = 'MONITOR'
+    else if (item.PRODUCT_TYPE === 'AA-BD4' || item.PRODUCT_TYPE === 'AUTO-BD5') item.PRODUCT_TYPE = 'AA'
+    return item
+}
 
 // get json
 const getCustomerRankingData = (bu) => {
@@ -105,7 +78,7 @@ const getCustomerRankingData = (bu) => {
             /* Actual Current日期距離現在時間超過3個月 */
             /* True: Past: Actual_Past , Current: Actual_Current */
             /* False: Past: Actual_Current , Current: Forecast_Current */
-            if (dateActual >= dateLast3Month) {
+            if (dateActual <= dateLast3Month) {
                 pastDiv = `
                 <div>
                     <span>${regex.test(actualPast.rank) ? '' : actualPast.rank}</span>
@@ -145,42 +118,6 @@ const getCustomerRankingData = (bu) => {
         })
         rateValue.innerHTML = calculateRate()
     })
-}
-
-const getAnnualKpiData = (bu, data) => {
-    // dom
-    const chartOba = document.querySelector('.chart-oba'),
-        chartcaerb = document.querySelector('.chart-caerb')
-    if (!data)
-        axios.post(hostName + 'warroom_annual_metrics.php', qs.stringify({ Bu: bu })).then((res) => {
-            const data = res.data[0]
-
-            // echarts OBA Cost
-            const objOba = {}
-            console.log(
-                'Target:',
-                data.OBA_Cost_Target,
-                'Last year:',
-                data.OBA_Cost_LastYear,
-                'Target > Last year',
-                data.OBA_Annual_Target > data.OBA_Cost_LastYear
-            )
-            data.OBA_Cost_LastYear =
-                data.OBA_Annual_Target > data.OBA_Cost_LastYear ? data.OBA_Annual_Target : data.OBA_Cost_LastYear
-            const maxAnnual = (Number(data.OBA_Cost_LastYear) / 80) * 100
-            objOba.value = Math.floor((Number(data.OBA_Annual_Cost) / maxAnnual) * 100)
-            objOba.name = Math.floor((Number(data.OBA_Annual_Cost) / Number(data.OBA_Annual_Target)) * 10000) / 100
-            objOba.axis = Math.floor((Number(data.OBA_Annual_Target) / maxAnnual) * 10) / 10
-            // echarts CAERB
-            const objCaerb = {}
-            const maxCaerb = (Number(data.CAERB_LastYear) / 80) * 100
-            objCaerb.value = Math.floor((Number(data.CAERB_total) / maxCaerb) * 100)
-            objCaerb.name = Math.floor((Number(data.CAERB_total) / Number(data.CAERB_target)) * 10000) / 100
-            objCaerb.axis = Math.floor((Number(data.CAERB_target) / maxCaerb) * 10) / 10
-
-            paintChartsGauge(chartOba, objOba)
-            paintChartsGauge(chartcaerb, objCaerb)
-        })
 }
 
 const getAnnualOBACost = (bu) => {
@@ -277,13 +214,6 @@ const getKpiJson = (bu) => {
             jsonp: 'jsonpCallback',
         })
     }
-    const getDataCustomerClaim = () => {
-        return $.ajax({
-            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-Customer_Claim001',
-            dataType: 'jsonp',
-            jsonp: 'jsonpCallback',
-        })
-    }
     const getDataActualClaim = () => {
         return $.ajax({
             url: jsonPath + '/jsonQuery.do?dataRequestName=CRC_IN_APPR_PROC_AMT001',
@@ -291,7 +221,13 @@ const getKpiJson = (bu) => {
             jsonp: 'jsonpCallback',
         })
     }
-    const getDataCustomerClaimMonthly = () => {}
+    const getDataCustomerClaimMonthly = () => {
+        return $.ajax({
+            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-Customer_Claim003',
+            dataType: 'jsonp',
+            jsonp: 'jsonpCallback',
+        })
+    }
 
     /* 燈號邏輯 */
     const pictureLight = (past, current, type) => {
@@ -300,7 +236,6 @@ const getKpiJson = (bu) => {
 
         if (type === 0) props = ['SORT_RATE', 'TARGET']
         else if (type === 1) props = ['SORTING_FEE', 'TARGET']
-        else if (type === 2) props = ['TOTAL_COST', 'TARGET']
         let valuePast, valueCurrent, valueTarget
         if (type === 0) {
             valuePast = Number(past[props[0]].replace('%', ''))
@@ -327,29 +262,44 @@ const getKpiJson = (bu) => {
         return str
     }
 
-    $.when(getDataOBACost(), getDataOBARate(), getDataCustomerClaim(), getDataActualClaim()).then(
-        (cost, rate, customerclaim, actualClaim) => {
+    $.when(getDataOBACost(), getDataOBARate(), getDataActualClaim(), getDataCustomerClaimMonthly()).then(
+        (cost, rate, actualClaim, claimMonthly) => {
             // AA => 'AA-BD4, AUTO-BD5'
             if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
             else bu = [bu]
             let dataRate = rate[0].filter((e) => bu.includes(e.APPLICATION))
             let dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-            let dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
             let dataActualClaim = actualClaim[0]
-                .map((item) => {
-                    if (item.PRODUCT_TYPE === 'OPEN_CELL_TV') item.PRODUCT_TYPE = 'TV'
-                    else if (
-                        item.PRODUCT_TYPE === 'IAV' ||
-                        item.PRODUCT_TYPE === 'MEDICAL' ||
-                        item.PRODUCT_TYPE === 'OPEN_CELL_XRAY'
-                    )
-                        item.PRODUCT_TYPE = 'IAVM'
-                    else if (item.PRODUCT_TYPE === 'OPEN_CELL_MONITOR') item.PRODUCT_TYPE = 'MONITOR'
-                    else if (item.PRODUCT_TYPE === 'AA-BD4' || item.PRODUCT_TYPE === 'AUTO-BD5')
-                        item.PRODUCT_TYPE = 'AA'
-                    return item
-                })
+                .map((item) => productTypeRule(item))
                 .filter((e) => bu.includes(e.PRODUCT_TYPE))
+            let dataClaimMonthly = claimMonthly[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+            /* Claim Monthly 月份補0 */
+            arrSixyearmonth.forEach((ym) => {
+                const yearMonthRate = dataRate.map((e) => e.YM)
+                const yearMonthCost = dataCost.map((e) => e.YM)
+                const yearMonthsClaimMonthly = dataClaimMonthly.map((e) => e.YEAR_MONTH.replace('-', ''))
+                if (!yearMonthRate.includes(ym))
+                    dataRate.push({
+                        APPLICATION: dataRate.map((e) => e.APPLICATION)[0],
+                        YM: ym,
+                        TARGET: dataRate.map((e) => e.TARGET)[0],
+                        SORT_RATE: '0%',
+                    })
+                if (!yearMonthCost.includes(ym))
+                    dataCost.push({
+                        PRODUCT_TYPE: dataCost.map((e) => e.PRODUCT_TYPE)[0],
+                        YM: ym,
+                        TARGET: dataCost.map((e) => e.TARGET)[0],
+                        SORTING_FEE: 0,
+                    })
+                if (!yearMonthsClaimMonthly.includes(ym))
+                    dataClaimMonthly.push({
+                        PRODUCT_TYPE: dataClaimMonthly.map((e) => e.PRODUCT_TYPE)[0],
+                        YEAR_MONTH: ym,
+                        AMOUNT: 0,
+                        TYPE: 'CRC',
+                    })
+            })
             let targetRate, targetCost, targetCliam
             let obaRateMax = 0
             let obaCostMax = 0
@@ -364,6 +314,7 @@ const getKpiJson = (bu) => {
 
                         return monthA - monthB
                     })
+                    console.log(dataRate)
                     const [dataLastMonth, dataThisMonth] = dataRate.slice(-2)
 
                     valueAcutal = dataThisMonth.SORT_RATE + '/月'
@@ -379,6 +330,7 @@ const getKpiJson = (bu) => {
 
                         return monthA - monthB
                     })
+                    console.log(dataCost)
                     const [dataLastMonth, dataThisMonth] = dataCost.slice(-2)
 
                     /* Cost計算 value * / 這個月已過天數 * 這個月天數 */
@@ -392,34 +344,36 @@ const getKpiJson = (bu) => {
 
                     targetCost = Math.floor(dataThisMonth.TARGET / 10000) / 100
                 } else if (index === 2) {
-                    if (dataClaim.length < 2) {
-                        dataClaim = new Array(2 - dataClaim.length)
-                            .fill({
-                                TOTAL_COST: 0,
-                                TARGET: 0,
-                                YM: `${String(yearCurrent).slice(-2)}${
-                                    monthCurrent < 10 ? 0 + monthCurrent : monthCurrent
-                                }`,
-                            })
-                            .concat(dataClaim)
-                    }
-                    /* 資料依YM排序 */
-                    dataClaim.sort((a, b) => {
-                        const monthA = Number(a.YM.slice(-2))
-                        const monthB = Number(b.YM.slice(-2))
-
-                        return monthA - monthB
-                    })
-                    const [dataLastMonth, dataThisMonth] = dataClaim.slice(-2)
+                    /* Claim Monthly */
+                    const [targetClaim] = dataClaimMonthly.filter((e) => e.TYPE === 'TARGET')
+                    const valueClaim = dataClaimMonthly.filter((e) => e.TYPE === 'CRC')
+                    const [dataLastMonth, dataThisMonth] = dataClaimMonthly.slice(-2)
 
                     /* Actual Claim */
                     let valueActualClaim = dataActualClaim.map((e) => e.AMOUNT)
                     valueActualClaim = valueActualClaim.length > 0 ? valueActualClaim.reduce((a, b) => a + b) : 0
                     valueAcutal = Math.floor(valueActualClaim / 10000) / 100 + 'M/月'
-                    valueTarget = dataThisMonth.TARGET + 'M/月'
-                    imgLight = pictureLight(dataLastMonth, dataThisMonth, index)
+                    valueTarget = targetClaim.AMOUNT + 'M/月'
+                    imgLight = (() => {
+                        let str = ''
+                        const valueCurrent = Number(valueAcutal.replace('M/月', ''))
+                        const valuePast = Math.floor(dataLastMonth.AMOUNT / 10000) / 100
+                        /* [達標/不達標] 這個月跟上個月比 */
+                        str = valueCurrent <= targetClaim.AMOUNT ? '達標' : '不達標'
 
-                    targetCliam = Number(dataThisMonth.TARGET)
+                        /* [好/持平/爛] 這個月跟Target比 */
+                        if (valueCurrent < valuePast) {
+                            str += '好'
+                        } else if (valueCurrent === valuePast) {
+                            str += '持平'
+                        } else if (valueCurrent > valuePast) {
+                            str += '爛'
+                        }
+
+                        return str
+                    })()
+
+                    targetCliam = Number(targetClaim.AMOUNT)
                 }
                 let tdContent = `
             <td style="background-color:${color};">${valueAcutal}</td>
@@ -445,15 +399,12 @@ const getKpiJson = (bu) => {
                     })
                     obj.name = 'Sorting Rate'
                     obj.xAxis = arrSixmonth
-
                     let arr = []
-                    arrSixmonth.forEach((month) => {
-                        let item = dataRate.filter((e) => Number(e.YM.slice(-2)) === month)[0]
+                    arrSixyearmonth.forEach((ym) => {
+                        let item = dataRate.filter((e) => e.YM === ym)[0]
                         if (item === undefined)
                             item = {
-                                YM: `${String(yearCurrent).slice(-2)}${
-                                    monthCurrent < 10 ? 0 + monthCurrent : monthCurrent
-                                }`,
+                                YM: ym,
                                 SORT_RATE: '0%',
                             }
                         arr.push(item)
@@ -497,13 +448,11 @@ const getKpiJson = (bu) => {
                     obj.name = 'Sorting Cost'
                     obj.xAxis = arrSixmonth
                     let arr = []
-                    arrSixmonth.forEach((month) => {
-                        let item = dataCost.filter((e) => Number(e.YM.slice(-2)) === month)[0]
+                    arrSixyearmonth.forEach((ym) => {
+                        let item = dataCost.filter((e) => e.YM === ym)[0]
                         if (item === undefined)
                             item = {
-                                YM: `${String(yearCurrent).slice(-2)}${
-                                    monthCurrent < 10 ? 0 + monthCurrent : monthCurrent
-                                }`,
+                                YM: ym,
                                 SORTING_FEE: 0,
                             }
                         arr.push(item)
@@ -515,27 +464,31 @@ const getKpiJson = (bu) => {
                     obj.gt = -1
                 } else if (type === 2) {
                     /* 資料不足6個月 補0*/
-                    dataClaim.forEach((e) => {
-                        if (customerClaimMax < Number(e.TARGET) * 1.5) {
-                            customerClaimMax = Number(e.TARGET) * 1.5
-                        }
-                        if (customerClaimMax < Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST)) {
-                            customerClaimMax = Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST) * 1.05
+                    dataClaimMonthly.forEach((e) => {
+                        if (e.TYPE === 'TARGET') {
+                            customerClaimMax =
+                                customerClaimMax < Number(e.AMOUNT) * 1.5
+                                    ? (customerClaimMax = Number(e.AMOUNT) * 1.5)
+                                    : customerClaimMax
+                        } else {
+                            customerClaimMax =
+                                customerClaimMax < Number(e.AMOUNT)
+                                    ? (customerClaimMax = Number(e.AMOUNT) * 1.05)
+                                    : customerClaimMax
                         }
                     })
                     obj.name = 'Customer Claim'
                     obj.xAxis = arrSixmonth
-                    obj.value = dataClaim.map((e) => Number(e.TOTAL_COST === null ? '0' : e.TOTAL_COST))
-                    /* 資料不足6個月 補0*/
-                    if (obj.value.length < 6) {
-                        let l = 6 - obj.value.length
-                        for (let i = 1; i <= l; i++) {
-                            obj.value.unshift(0)
-                        }
-                        obj.target = targetCliam
-                        obj.max = customerClaimMax
-                        obj.gt = -1
-                    }
+                    obj.value = dataClaimMonthly
+                        .filter((e) => e.TYPE === 'CRC')
+                        .slice(-6)
+                        .map((e) => Math.floor(e.AMOUNT / 10000) / 100)
+                    if (dataActualClaim.length > 0)
+                        obj.value[5] =
+                            Math.floor(dataActualClaim.map((e) => e.AMOUNT).reduce((a, b) => a + b) / 10000) / 100
+                    obj.target = targetCliam
+                    obj.max = Math.floor(customerClaimMax / 10000) / 100
+                    obj.gt = -1
                 }
                 paintChartLine(chartDom, obj)
             }
@@ -583,13 +536,6 @@ const getSankeyData = (bu) => {
             jsonp: 'jsonpCallback',
         })
     }
-    const getDataCustomerClaim = () => {
-        return $.ajax({
-            url: jsonPath + '/jsonQuery.do?dataRequestName=cq-warroom-PROD-Customer_Claim002',
-            dataType: 'jsonp',
-            jsonp: 'jsonpCallback',
-        })
-    }
     const getDataActualClaim = () => {
         return $.ajax({
             url: jsonPath + '/jsonQuery.do?dataRequestName=CRC_IN_APPR_PROC_AMT001',
@@ -597,144 +543,134 @@ const getSankeyData = (bu) => {
             jsonp: 'jsonpCallback',
         })
     }
-    $.when(getDataOBACost(), getDataOBARate(), getDataCustomerClaim(), getDataActualClaim()).then(
-        (cost, rate, customerclaim, actualClaim) => {
-            // AA => 'AA-BD4, AUTO-BD5'
-            if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
-            else bu = [bu]
-            const dataRate = rate[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-            const dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-            const dataClaim = customerclaim[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
-            const dataActualClaim = actualClaim[0]
-                .map((item) => {
-                    if (item.PRODUCT_TYPE === 'OPEN_CELL_TV') item.PRODUCT_TYPE = 'TV'
-                    else if (item.PRODUCT_TYPE === 'IAV' || item.PRODUCT_TYPE === 'MEDICAL') item.PRODUCT_TYPE = 'IAVM'
-                    else if (item.PRODUCT_TYPE === 'AA-BD4' || item.PRODUCT_TYPE === 'AUTO-BD5')
-                        item.PRODUCT_TYPE = 'AA'
-                    return item
-                })
-                .filter((e) => bu.includes(e.PRODUCT_TYPE))
+    $.when(getDataOBACost(), getDataOBARate(), getDataActualClaim()).then((cost, rate, actualClaim) => {
+        // AA => 'AA-BD4, AUTO-BD5'
+        if (bu === 'AA') bu = ['AA-BD4', 'AUTO-BD5']
+        else bu = [bu]
+        const dataRate = rate[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+        const dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
+        const dataActualClaim = actualClaim[0]
+            .map((item) => productTypeRule(item))
+            .filter((e) => bu.includes(e.PRODUCT_TYPE))
 
-            const chartSankey = document.querySelector('.chart-sankey')
-            const kpiColor = {
-                'OBA Sorting Rate': '#70E0E0',
-                'OBA Sorting Cost': '#E0FF70',
-                'Customer Claim': '#FFA8E0',
-            }
-
-            // customer
-            const customerName = Array.from(
-                new Set(
-                    [
-                        dataRate.map((e) => e.CUST_GROUP),
-                        dataCost.map((e) => e.CUST_GROUP),
-                        dataActualClaim.map((e) => e.CUST_GROUP),
-                    ].flat()
-                )
-            ).sort()
-            const colorRightList = generateColor(customerName.length)
-
-            // obj to echarts
-            const obj = {}
-            obj.value = []
-            // left source
-            for (let i = 0; i < 3; i++) {
-                let key = Object.keys(kpiColor)[i]
-                let value = Object.values(kpiColor)[i]
-                if (i === 0) {
-                    obj.value.push({
-                        name: key,
-                        itemStyle: { color: value },
-                    })
-                } else if (i === 1) {
-                    obj.value.push({
-                        name: key,
-                        itemStyle: { color: value },
-                    })
-                } else if (i === 2) {
-                    obj.value.push({
-                        name: key,
-                        itemStyle: { color: value },
-                    })
-                }
-            }
-            // right target
-            customerName.forEach((item, index) => {
-                obj.value.push({ name: item, itemStyle: { color: colorRightList[index] } })
-            })
-            obj.value.push({
-                name: 'none',
-                itemStyle: { color: 'transparent', borderWidth: 0 },
-                label: { show: false },
-            })
-            // links
-            obj.links = []
-            Object.keys(kpiColor).forEach((category, index) => {
-                if (index === 0) {
-                    if (dataRate.length < 1)
-                        return obj.links.push({
-                            source: category,
-                            target: 'none',
-                            value: 0.3,
-                            lineStyle: { color: 'transparent' },
-                        })
-                    const totalValue = dataRate.map((e) => e.INSPECTION_QTY).reduce((a, b) => a + b)
-                    dataRate.forEach((item) => {
-                        const value = item.INSPECTION_QTY / totalValue
-                        obj.links.push({
-                            source: category,
-                            target: item.CUST_GROUP,
-                            value: value,
-                            lineStyle: { color: 'gradient' },
-                        })
-                    })
-                } else if (index === 1) {
-                    if (dataCost.length < 1)
-                        return obj.links.push({
-                            source: category,
-                            target: 'none',
-                            value: 0.3,
-                            lineStyle: { color: 'transparent' },
-                        })
-                    const totalValue = dataCost.map((e) => e.SORTING_FEE).reduce((a, b) => a + b)
-                    dataCost.forEach((item) => {
-                        const value = item.SORTING_FEE / totalValue
-                        obj.links.push({
-                            source: category,
-                            target: item.CUST_GROUP,
-                            value: value,
-                            lineStyle: { color: 'gradient' },
-                        })
-                    })
-                } else if (index === 2) {
-                    if (dataActualClaim.length < 1)
-                        return obj.links.push({
-                            source: category,
-                            target: 'none',
-                            value: 0.3,
-                            lineStyle: { color: 'transparent' },
-                        })
-                    const totalValue = dataActualClaim.map((e) => e.AMOUNT).reduce((a, b) => a + b)
-                    dataActualClaim.forEach((item) => {
-                        const value = item.AMOUNT / totalValue
-                        obj.links.push({
-                            source: category,
-                            target: item.CUST_GROUP,
-                            value: value,
-                            lineStyle: { color: 'gradient' },
-                        })
-                    })
-                }
-            })
-
-            paintChartSankey(chartSankey, obj)
+        const chartSankey = document.querySelector('.chart-sankey')
+        const kpiColor = {
+            'OBA Sorting Rate': '#70E0E0',
+            'OBA Sorting Cost': '#E0FF70',
+            'Customer Claim': '#FFA8E0',
         }
-    )
+
+        // customer
+        const customerName = Array.from(
+            new Set(
+                [
+                    dataRate.map((e) => e.CUST_GROUP),
+                    dataCost.map((e) => e.CUST_GROUP),
+                    dataActualClaim.map((e) => e.CUST_GROUP),
+                ].flat()
+            )
+        ).sort()
+        const colorRightList = generateColor(customerName.length)
+
+        // obj to echarts
+        const obj = {}
+        obj.value = []
+        // left source
+        for (let i = 0; i < 3; i++) {
+            let key = Object.keys(kpiColor)[i]
+            let value = Object.values(kpiColor)[i]
+            if (i === 0) {
+                obj.value.push({
+                    name: key,
+                    itemStyle: { color: value },
+                })
+            } else if (i === 1) {
+                obj.value.push({
+                    name: key,
+                    itemStyle: { color: value },
+                })
+            } else if (i === 2) {
+                obj.value.push({
+                    name: key,
+                    itemStyle: { color: value },
+                })
+            }
+        }
+        // right target
+        customerName.forEach((item, index) => {
+            obj.value.push({ name: item, itemStyle: { color: colorRightList[index] } })
+        })
+        obj.value.push({
+            name: 'none',
+            itemStyle: { color: 'transparent', borderWidth: 0 },
+            label: { show: false },
+        })
+        // links
+        obj.links = []
+        Object.keys(kpiColor).forEach((category, index) => {
+            if (index === 0) {
+                if (dataRate.length < 1)
+                    return obj.links.push({
+                        source: category,
+                        target: 'none',
+                        value: 0.3,
+                        lineStyle: { color: 'transparent' },
+                    })
+                const totalValue = dataRate.map((e) => e.INSPECTION_QTY).reduce((a, b) => a + b)
+                dataRate.forEach((item) => {
+                    const value = item.INSPECTION_QTY / totalValue
+                    obj.links.push({
+                        source: category,
+                        target: item.CUST_GROUP,
+                        value: value,
+                        lineStyle: { color: 'gradient' },
+                    })
+                })
+            } else if (index === 1) {
+                if (dataCost.length < 1)
+                    return obj.links.push({
+                        source: category,
+                        target: 'none',
+                        value: 0.3,
+                        lineStyle: { color: 'transparent' },
+                    })
+                const totalValue = dataCost.map((e) => e.SORTING_FEE).reduce((a, b) => a + b)
+                dataCost.forEach((item) => {
+                    const value = item.SORTING_FEE / totalValue
+                    obj.links.push({
+                        source: category,
+                        target: item.CUST_GROUP,
+                        value: value,
+                        lineStyle: { color: 'gradient' },
+                    })
+                })
+            } else if (index === 2) {
+                if (dataActualClaim.length < 1)
+                    return obj.links.push({
+                        source: category,
+                        target: 'none',
+                        value: 0.3,
+                        lineStyle: { color: 'transparent' },
+                    })
+                const totalValue = dataActualClaim.map((e) => e.AMOUNT).reduce((a, b) => a + b)
+                dataActualClaim.forEach((item) => {
+                    const value = item.AMOUNT / totalValue
+                    obj.links.push({
+                        source: category,
+                        target: item.CUST_GROUP,
+                        value: value,
+                        lineStyle: { color: 'gradient' },
+                    })
+                })
+            }
+        })
+
+        paintChartSankey(chartSankey, obj)
+    })
 }
 
 const navClick = (bu) => {
     getCustomerRankingData(bu)
-    // getAnnualKpiData(bu)
     getAnnualOBACost(bu)
     getAnnualCAERB(bu)
     getKpiJson(bu)
