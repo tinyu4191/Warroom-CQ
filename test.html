@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" href="images/api.ico" type="image/ico" />
+        <title>API Test</title>
+        <style>
+            table,
+            th,
+            td {
+                border: 1px solid #ccc;
+                border-collapse: collapse;
+            }
+            th,
+            td {
+                padding: 5px 10px;
+            }
+            th {
+                background-color: gray;
+                color: white;
+            }
+            .btn-stop {
+                display: none;
+            }
+            .result > h1 {
+                color: red;
+            }
+            .input-url {
+                width: 200px;
+            }
+            .time {
+                font-size: 20px;
+            }
+            .time-ms {
+                font-size: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <button class="btn-start">發送 API Request</button>
+        <button class="btn-stop">STOP</button>
+        <input class="input-url" type="text" placeholder="輸入JSON名稱" value="cq-CIA-PROD-Eng-Or-Cust001" />
+        <div>
+            <input type="radio" id="urlIT" name="urlType" value="IT" checked />
+            <label for="urlIT">IT</label>
+            <input type="radio" id="urlTest" name="urlType" value="IT" checked />
+            <label for="urlTest">IT_Test</label>
+            <!-- <input type="radio" id="urlCQ" name="urlType" value="CQ" />
+            <label for="urlCQ">CQ</label> -->
+        </div>
+        <div class="class">計時器</div>
+        <div class="time">
+            <span class="time-min">00</span>:<span class="time-sec">00</span>:<span class="time-ms">00</span>
+        </div>
+        <div class="result">
+            <h1 class="result-title"></h1>
+            <span class="url-api"></span>
+            <table>
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </body>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.23.0/axios.js"
+        integrity="sha512-nZmAl1ClAQ0kQ2EH3H6JMQHxNt2K7pGcgxQRoMpYuuuXyPnIGaMKNS7jwZRqBJhfSRYXc2myu+iKFbwhiCL3+w=="
+        crossorigin="anonymous"
+    ></script>
+
+    <!-- jQuery -->
+    <script src="http://tnvqis03/Dashboard_Template/vendors/jquery/dist/jquery.min.js"></script>
+    <script src="http://tnvqis03/Dashboard_Template/build/js/jquery.url.js"></script>
+    <script>
+        const btnStart = document.querySelector('.btn-start'),
+            btnStop = document.querySelector('.btn-stop'),
+            timeMin = document.querySelector('.time-min'),
+            timeSec = document.querySelector('.time-sec'),
+            timeMs = document.querySelector('.time-ms'),
+            thead = document.querySelector('thead'),
+            tbody = document.querySelector('tbody'),
+            resultTitle = document.querySelector('.result-title'),
+            result = document.querySelector('.result'),
+            inputUrl = document.querySelector('.input-url'),
+            inputRadio = document.querySelectorAll('input[type="radio"]'),
+            urlApi = document.querySelector('.url-api')
+
+        let ms = 0,
+            sec = 0,
+            min = 0,
+            interval,
+            jsonPath = '',
+            url = 'cq-CIA-PROD-Eng-Or-Cust001'
+
+        const urlRouter = {
+            IT: 'http://tnvqis03/JsonService/jsonQuery.do?dataRequestName=',
+            IT_Test: 'http://tnvqis03/JsonServiceTest/jsonQuery.do?dataRequestName=',
+            CQ: 'http://Tw071273p\d\MAMP\htdocs\cq\cq-warroom',
+        }
+
+        const timerInitialization = () => {
+            ;(min = 0), (sec = 0), (ms = 0)
+            timeMs.innerText = ms < 10 ? `0${ms}` : ms
+            timeSec.innerText = sec < 10 ? `0${sec}` : sec
+            timeMin.innerText = min < 10 ? `0${min}` : min
+        }
+
+        const timer = () => {
+            timerInitialization()
+            interval = window.setInterval(function () {
+                ms += 1
+                if (ms === 100) {
+                    ms = 0
+                    sec += 1
+                }
+                if (sec === 60) {
+                    sec = 0
+                    min += 1
+                }
+
+                timeMs.innerText = ms < 10 ? `0${ms}` : ms
+                timeSec.innerText = sec < 10 ? `0${sec}` : sec
+                timeMin.innerText = min < 10 ? `0${min}` : min
+            }, 10)
+        }
+
+        const sendAPIrequest = () => {
+            timer()
+            result.style.display = 'none'
+            inputRadio.forEach((e) => {
+                if (e.checked) jsonPath = urlRouter[e.value]
+            })
+            url = inputUrl.value || url
+            urlApi.innerText = 'API : ' + jsonPath + url
+
+            const storage = window.sessionStorage.getItem('EngCust')
+            let res
+            async function callAPI() {
+                if (storage === null) {
+                    res = await $.ajax({
+                        url: jsonPath + url,
+                        dataTypeL: 'jsonp',
+                        jsonp: 'jsonpCallback',
+                        error: function (err) {
+                            window.clearInterval(interval)
+                            resultTitle.innerText = 'Not have data!'
+                            result.style.display = ''
+                            thead.innerHTML = ''
+                            tbody.innerHTML = ''
+                        },
+                    })
+                    window.sessionStorage.setItem('EngCust', JSON.stringify(res))
+                } else res = JSON.parse(storage)
+            }
+
+            callAPI().then(() => {
+                window.clearInterval(interval)
+                let headContent = '',
+                    bodyContent = ''
+                result.style.display = ''
+                if (res.length < 1) resultTitle.innerText = '沒有資料!'
+                else {
+                    resultTitle.innerText = `Result : ${res.length} 筆`
+                    headContent += '<tr>'
+                    const titles = Object.keys(res[0]).sort()
+                    titles.forEach((item) => {
+                        headContent += `<th>${item}</th>`
+                    })
+                    headContent += '</tr>'
+                    res.forEach((item, i) => {
+                        bodyContent += '<tr>'
+                        titles.forEach((title) => {
+                            bodyContent += `<td>${item[title]}</td>`
+                        })
+                        bodyContent += '</tr>'
+                    })
+                }
+                thead.innerHTML = headContent
+                tbody.innerHTML = bodyContent
+            })
+        }
+
+        btnStart.addEventListener('click', sendAPIrequest)
+
+        btnStop.addEventListener('click', function () {
+            window.clearInterval(interval)
+        })
+
+        inputUrl.addEventListener('keyup', function (event) {
+            if (event.keyCode === 13) {
+                btnStart.click()
+            }
+        })
+
+        inputUrl.addEventListener('focusin', function () {
+            inputUrl.value = ''
+        })
+
+        inputUrl.addEventListener('change', function () {
+            url = inputUrl.value
+        })
+
+        inputUrl.addEventListener('focusout', function () {
+            inputUrl.value = url
+        })
+    </script>
+</html>
