@@ -52,8 +52,9 @@ const getCustomerRankingData = (bu) => {
             const [forecastPast] = data.filter((e) => e.TYPE === 'forecast_p')
             const [forecastCurrent] = data.filter((e) => e.TYPE === 'forecast_c')
             let dateActual = new Date(`${actualCurrent.year} ${actualCurrent.month}`).getTime()
-            let thisMonth = today.getMonth()
-            let dateLast3Month = today.setMonth(today.getMonth() - 3)
+            const d = new Date()
+            const thisMonth = d.getMonth() + 1
+            const dateLast3Month = d.setMonth(d.getMonth() - 3)
             let pastDiv = ''
             let currentDiv = ''
             let isNew = false
@@ -74,20 +75,22 @@ const getCustomerRankingData = (bu) => {
                 }
                 return light
             }
-            const regex = new RegExp('^[a-zA-Z]')
+            const regex = new RegExp('[/]')
             /* Actual Current日期距離現在時間超過3個月 */
             /* True: Past: Actual_Past , Current: Actual_Current */
             /* False: Past: Actual_Current , Current: Forecast_Current */
-            if (dateActual <= dateLast3Month) {
+
+            console.log(item, Number(actualCurrent.month), thisMonth)
+            if (dateActual >= dateLast3Month) {
                 pastDiv = `
                 <div>
-                    <span>${regex.test(actualPast.rank) ? '' : actualPast.rank}</span>
+                    <span>${regex.test(actualPast.rank) ? actualPast.rank : ''}</span>
                     <div class="circle ${checkLight(actualPast.lamp)}"></div>
                 </div>
                 `
                 currentDiv = `
                 <div>
-                    <span>${regex.test(actualCurrent.rank) ? '' : actualCurrent.rank}</span>
+                    <span>${regex.test(actualCurrent.rank) ? actualCurrent.rank : ''}</span>
                     <div class="light-current circle ${checkLight(actualCurrent.lamp)}"></div>
                 </div>
                 `
@@ -95,13 +98,13 @@ const getCustomerRankingData = (bu) => {
             } else {
                 pastDiv = `
                 <div>
-                    <span>${regex.test(actualCurrent.rank) ? '' : actualCurrent.rank}</span>
+                    <span>${regex.test(actualCurrent.rank) ? actualCurrent.rank : ''}</span>
                     <div class="circle ${checkLight(actualCurrent.lamp)}"></div>
                 </div>
                 `
                 currentDiv = `
                 <div>
-                    <span>${regex.test(forecastCurrent.rank) ? '' : forecastCurrent.rank}</span>
+                    <span>${regex.test(forecastCurrent.rank) ? forecastCurrent.rank : ''}</span>
                     <div class="light-current circle ${checkLight(forecastCurrent.lamp)}"></div>
                 </div>
                 `
@@ -547,7 +550,7 @@ const getSankeyData = (bu) => {
         })
     }
     $.when(getDataOBACost(), getDataOBARate(), getDataActualClaim()).then((cost, rate, actualClaim) => {
-        // AA => 'AA-BD4, AUTO-BD5'
+        console.log(bu)
         const dataRate = rate[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
         const dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
         const dataActualClaim = actualClaim[0]
@@ -867,7 +870,7 @@ const paintChartSankey = (dom, data) => {
 const generateColor = (num) => {
     let arr = []
     let hex = () => {
-        return (Math.round(Math.random() * 60) + 127).toString(16)
+        return (Math.round(Math.random() * 154) + 100).toString(16)
     }
     for (let i = 0; i < num; i++) {
         arr.push(`#${hex()}${hex()}${hex()}`)
