@@ -52,9 +52,10 @@ const getCustomerRankingData = (bu) => {
             const [forecastPast] = data.filter((e) => e.TYPE === 'forecast_p')
             const [forecastCurrent] = data.filter((e) => e.TYPE === 'forecast_c')
             let dateActual = new Date(`${actualCurrent.year} ${actualCurrent.month}`).getTime()
-            const d = new Date()
-            const thisMonth = d.getMonth() + 1
-            const dateLast3Month = d.setMonth(d.getMonth() - 3)
+            let dateLast3Month = new Date()
+            dateLast3Month = dateLast3Month.setMonth(dateLast3Month.getMonth() - 3)
+            let dateLast2Week = new Date()
+            dateLast2Week = dateLast2Week.setTime(dateLast2Week.getTime() - 24 * 3600 * 1000 * 14)
             let pastDiv = ''
             let currentDiv = ''
             let isNew = false
@@ -80,7 +81,6 @@ const getCustomerRankingData = (bu) => {
             /* True: Past: Actual_Past , Current: Actual_Current */
             /* False: Past: Actual_Current , Current: Forecast_Current */
 
-            console.log(item, Number(actualCurrent.month), thisMonth)
             if (dateActual >= dateLast3Month) {
                 pastDiv = `
                 <div>
@@ -94,7 +94,7 @@ const getCustomerRankingData = (bu) => {
                     <div class="light-current circle ${checkLight(actualCurrent.lamp)}"></div>
                 </div>
                 `
-                if (Number(actualCurrent.month) === thisMonth) isNew = true
+                if (new Date(actualCurrent.insertdate).getTime() >= dateLast2Week) isNew = true
             } else {
                 pastDiv = `
                 <div>
@@ -318,7 +318,6 @@ const getKpiJson = (bu) => {
 
                         return monthA - monthB
                     })
-                    console.log(dataRate)
                     const [dataLastMonth, dataThisMonth] = dataRate.slice(-2)
 
                     valueAcutal = dataThisMonth.SORT_RATE + '/月'
@@ -334,7 +333,6 @@ const getKpiJson = (bu) => {
 
                         return monthA - monthB
                     })
-                    console.log(dataCost)
                     const [dataLastMonth, dataThisMonth] = dataCost.slice(-2)
 
                     /* Cost計算 value * / 這個月已過天數 * 這個月天數 */
@@ -521,7 +519,6 @@ const getKpiJson = (bu) => {
             titleIndex.forEach((item, index) => {
                 tdChart(index, index + 1)
             })
-            console.log(bu)
             getSankeyData(bu)
         }
     )
@@ -550,7 +547,6 @@ const getSankeyData = (bu) => {
         })
     }
     $.when(getDataOBACost(), getDataOBARate(), getDataActualClaim()).then((cost, rate, actualClaim) => {
-        console.log(bu)
         const dataRate = rate[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
         const dataCost = cost[0].filter((e) => bu.includes(e.PRODUCT_TYPE))
         const dataActualClaim = actualClaim[0]
@@ -667,7 +663,6 @@ const getSankeyData = (bu) => {
                 })
             }
         })
-        console.log(obj)
         paintChartSankey(chartSankey, obj)
     })
 }
